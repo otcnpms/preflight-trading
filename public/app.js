@@ -299,6 +299,7 @@ async function loadMarketData() {
     if (Number.isFinite(Number(data.price))) document.getElementById("spotPrice").value = Number(data.price).toFixed(2);
     updateMetrics();
     renderChecklist();
+    if (strategy.value) renderStrategyModule(strategy.value);
     msg.textContent = `${symbol} loaded. 15m, 1H and Daily context calculated from returned price history.`;
   } catch (err) {
     document.getElementById("marketCard").hidden = true;
@@ -464,6 +465,117 @@ const strategyDefinitions = {
 
 const strategyConfirmations = {};
 
+function pctDistance(value, reference) {
+  const v = Number(value), r = Number(reference);
+  if (!Number.isFinite(v) || !Number.isFinite(r) || r === 0) return null;
+  return ((v - r) / r) * 100;
+}
+
+function strategyAutoEvidence(code, index) {
+  const m = state.market;
+  if (!m) return null;
+
+  const gap = Number(m.gapPct);
+  const tf15 = m.timeframes?.min15;
+  const tf1h = m.timeframes?.hour1;
+  const tfD = m.timeframes?.daily;
+
+  const close15 = Number(tf15?.latest?.close);
+  const close1h = Number(tf1h?.latest?.close);
+  const open1h = Number(tf1h?.latest?.open);
+  const closeD = Number(tfD?.latest?.close);
+
+  const ma15 = tf15?.movingAverages || {};
+  const ma1h = tf1h?.movingAverages || {};
+  const bb15 = tf15?.bollinger || {};
+  const bb1h = tf1h?.bollinger || {};
+  const bbD = tfD?.bollinger || {};
+
+  const gapEvidence = expected => {
+    if (!Number.isFinite(gap)) return { status: "waiting", text: "Gap data unavailable" };
+    const match = expected === "up" ? gap > 0 : gap < 0;
+    return {
+      status: match ? "match" : "mismatch",
+      text: `${gap > 0 ? "Gap up" : gap < 0 ? "Gap down" : "No gap"} ${gap >= 0 ? "+" : ""}${gap.toFixed(2)}% · expected ${expected}`
+    };
+  };
+
+  if ((code === "E5" && index === 1) || (code === "E8" && index === 1) || (code === "E9" && index === 2)) {
+    const ev = gapEvidence("up");
+    if (code === "E5" && Number.isFinite(close15) && Number.isFinite(Number(bb15.upper))) {
+      const d = pctDistance(close15, bb15.upper);
+      ev.text += d === null ? "" : ` · 15m close ${d >= 0 ? "+" : ""}${d.toFixed(2)}% vs upper band`;
+    }
+    if (code === "E8" && Number.isFinite(close1h) && Number.isFinite(Number(ma1h.ma20))) {
+      const d = pctDistance(close1h, ma1h.ma20);
+      ev.text += d === null ? "" : ` · 1H close ${d >= 0 ? "+" : ""}${d.toFixed(2)}% vs MA20`;
+    }
+    if (code === "E9" && Number.isFinite(close15) && Number.isFinite(Number(bb15.middle))) {
+      ev.text += ` · 15m close ${close15 >= Number(bb15.middle) ? "above" : "below"} midpoint`;
+    }
+    return ev;
+  }
+
+  if ((code === "E6" && index === 1) || (code === "E7" && index === 1) || (code === "E10" && index === 2)) {
+    const ev = gapEvidence("down");
+    if (code === "E6" && Number.isFinite(close15) && Number.isFinite(Number(bb15.lower))) {
+      const d = pctDistance(close15, bb15.lower);
+      ev.text += d === null ? "" : ` · 15m close ${d >= 0 ? "+" : ""}${d.toFixed(2)}% vs lower band`;
+    }
+    if (code === "E7" && Number.isFinite(close1h) && Number.isFinite(Number(ma1h.ma20))) {
+      const d = pctDistance(close1h, ma1h.ma20);
+      ev.text += d === null ? "" : ` · 1H close ${d >= 0 ? "+" : ""}${d.toFixed(2)}% vs MA20`;
+    }
+    if (code === "E10" && Number.isFinite(close15) && Number.isFinite(Number(bb15.middle))) {
+      ev.text += ` · 15m close ${close15 >= Number(bb15.middle) ? "above" : "below"} midpoint`;
+    }
+    return ev;
+  }
+
+  if ((code === "E1" || code === "E2") && index === 3 &&
+      Number.isFinite(close1h) && Number.isFinite(Number(ma1h.ma20))) {
+    const candle = Number.isFinite(open1h) ? (close1h > open1h ? "bullish" : close1h < open1h ? "bearish" : "flat") : "unknown";
+    return {
+      status: "data",
+      text: `1H close ${money(close1h)} · MA20 ${money(ma1h.ma20)} · current candle ${candle}`
+    };
+  }
+
+  if ((code === "E1" || code === "E2") && index === 4 && Number.isFinite(close15)) {
+    const mas = [ma15.ma20, ma15.ma40, ma15.ma100, ma15.ma200].map(Number).filter(Number.isFinite);
+    if (mas.length) {
+      const above = mas.filter(v => close15 >= v).length;
+      return { status: "data", text: `15m close is above ${above}/${mas.length} tracked moving averages` };
+    }
+  }
+
+  if ((code === "E3" || code === "E4") && index === 0 &&
+      Number.isFinite(closeD) && Number.isFinite(Number(bbD.middle))) {
+    const d = pctDistance(closeD, bbD.middle);
+    return { status: "data", text: `Daily close ${d >= 0 ? "+" : ""}${d.toFixed(2)}% vs Bollinger midpoint` };
+  }
+
+  if ((code === "E3" || code === "E4") && index === 1 &&
+      Number.isFinite(close1h) && Number.isFinite(Number(bb1h.middle))) {
+    const d = pctDistance(close1h, bb1h.middle);
+    return { status: "data", text: `1H close ${d >= 0 ? "+" : ""}${d.toFixed(2)}% vs Bollinger midpoint` };
+  }
+
+  if ((code === "E3" || code === "E4") && index === 2 &&
+      Number.isFinite(closeD) && Number.isFinite(Number(bbD.middle))) {
+    const d = pctDistance(closeD, bbD.middle);
+    return { status: "data", text: `Current Daily distance to midpoint: ${Math.abs(d).toFixed(2)}%` };
+  }
+
+  if ((code === "E11" || code === "E12") && index === 4 &&
+      Number.isFinite(Number(bb1h.upper)) && Number.isFinite(Number(bb1h.lower)) && Number.isFinite(Number(bb1h.middle))) {
+    const width = ((Number(bb1h.upper) - Number(bb1h.lower)) / Number(bb1h.middle)) * 100;
+    return { status: "data", text: `Current 1H Bollinger band width: ${width.toFixed(2)}% · volatility threshold remains visual` };
+  }
+
+  return null;
+}
+
 function renderStrategyModule(code) {
   const module = document.getElementById("strategyModule");
   const def = strategyDefinitions[code];
@@ -484,24 +596,38 @@ function renderStrategyModule(code) {
 
   const wrap = document.getElementById("strategyRequirements");
   wrap.innerHTML = "";
+  let autoFacts = 0;
+
   def.requirements.forEach((text, index) => {
+    const evidence = strategyAutoEvidence(code, index);
+    if (evidence) autoFacts += 1;
+
     const row = document.createElement("label");
     row.className = "strategy-check";
     row.innerHTML = `
       <input type="checkbox" data-strategy="${code}" data-index="${index}" ${strategyConfirmations[code][index] ? "checked" : ""}>
-      <span><strong>Requirement ${index + 1}</strong><small>${text}</small></span>
+      <span>
+        <strong>Requirement ${index + 1} <em class="req-mode visual">VISUAL CONFIRM</em>${evidence ? ` <em class="req-mode auto">AUTO DATA</em>` : ""}</strong>
+        <small>${text}</small>
+        ${evidence ? `<small class="strategy-evidence ${evidence.status}">${evidence.text}</small>` : ""}
+      </span>
     `;
     wrap.appendChild(row);
   });
-  updateStrategyProgress(code);
+
+  updateStrategyProgress(code, autoFacts);
 }
 
-function updateStrategyProgress(code) {
+function updateStrategyProgress(code, autoFactsOverride) {
   const def = strategyDefinitions[code];
   if (!def) return;
   const values = strategyConfirmations[code] || [];
   const complete = values.filter(Boolean).length;
-  document.getElementById("strategyProgress").textContent = `${complete} / ${def.requirements.length} confirmed`;
+  const autoFacts = Number.isFinite(autoFactsOverride)
+    ? autoFactsOverride
+    : def.requirements.filter((_, index) => Boolean(strategyAutoEvidence(code, index))).length;
+  document.getElementById("strategyProgress").textContent =
+    `${complete}/${def.requirements.length} visual · ${autoFacts} auto facts`;
 }
 
 document.getElementById("strategyRequirements").addEventListener("change", e => {
