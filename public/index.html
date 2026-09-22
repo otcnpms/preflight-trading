@@ -28,6 +28,22 @@
       <p class="market-message muted" id="marketMessage">Enter a ticker and load market data.</p>
     </section>
 
+    <section class="card watch-card">
+      <div class="section-head">
+        <div>
+          <p class="step">PRE-FLIGHT WATCH</p>
+          <h2>Watchlist Scanner</h2>
+          <p class="muted watch-help">Check one ticker at a time for objective events. This keeps usage inside the current Twelve Data limits.</p>
+        </div>
+        <span class="counter" id="watchUsage">Manual scan</span>
+      </div>
+      <div class="watch-add">
+        <input id="watchTicker" placeholder="Add ticker (NVDA)" maxlength="12" autocomplete="off" />
+        <button class="secondary" id="addWatchBtn" type="button">Add</button>
+      </div>
+      <div id="watchList" class="watch-list"></div>
+    </section>
+
     <section class="card market-card" id="marketCard" hidden>
       <div class="section-head">
         <div>
