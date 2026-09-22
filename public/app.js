@@ -310,6 +310,137 @@ async function loadMarketData() {
   }
 }
 
+function detectWatchEvents(data) {
+  const events = [];
+  const inspect = (label, tf) => {
+    if (!tf?.available || !tf.latest || !tf.previous) return;
+    const c = Number(tf.latest.close);
+    const p = Number(tf.previous.close);
+    const ma = tf.movingAverages || {};
+    const pma = tf.previousMovingAverages || {};
+    const bb = tf.bollinger || {};
+    const pbb = tf.previousBollinger || {};
+
+    const cross = (prevA, prevB, nowA, nowB, upText, downText) => {
+      if (![prevA, prevB, nowA, nowB].every(v => Number.isFinite(Number(v)))) return;
+      if (Number(prevA) <= Number(prevB) && Number(nowA) > Number(nowB)) events.push(label + " · " + upText);
+      if (Number(prevA) >= Number(prevB) && Number(nowA) < Number(nowB)) events.push(label + " · " + downText);
+    };
+
+    cross(p, pma.ma20, c, ma.ma20, "Price crossed above MA20", "Price crossed below MA20");
+    cross(pma.ma20, pma.ma40, ma.ma20, ma.ma40, "MA20 crossed above MA40", "MA20 crossed below MA40");
+    cross(p, pbb.middle, c, bb.middle, "Price crossed above Bollinger midpoint", "Price crossed below Bollinger midpoint");
+
+    if (Number.isFinite(Number(bb.middle)) && Number.isFinite(c)) {
+      const distance = Math.abs(((c - Number(bb.middle)) / Number(bb.middle)) * 100);
+      if (distance <= 0.5) events.push(label + " · Price within 0.5% of Bollinger midpoint");
+    }
+  };
+
+  inspect("15m", data.timeframes?.min15);
+  inspect("1H", data.timeframes?.hour1);
+  inspect("Daily", data.timeframes?.daily);
+
+  const gap = Number(data.gapPct);
+  if (Number.isFinite(gap) && Math.abs(gap) >= 0.5) {
+    events.push("Session · " + (gap > 0 ? "Gap up " : "Gap down ") + (gap >= 0 ? "+" : "") + gap.toFixed(2) + "%");
+  }
+  return [...new Set(events)];
+}
+
+let watchSymbols = JSON.parse(localStorage.getItem("preflightWatchlist") || "[]");
+const watchResults = {};
+
+function saveWatchlist() {
+  localStorage.setItem("preflightWatchlist", JSON.stringify(watchSymbols));
+}
+
+function renderWatchlist() {
+  const wrap = document.getElementById("watchList");
+  wrap.innerHTML = "";
+  if (!watchSymbols.length) {
+    wrap.innerHTML = '<p class="muted watch-empty">Add a ticker to start watching for crosses, midpoint events and gaps.</p>';
+    return;
+  }
+  watchSymbols.forEach(symbol => {
+    const result = watchResults[symbol];
+    const row = document.createElement("div");
+    row.className = "watch-row";
+    const eventHtml = !result
+      ? '<span class="watch-state">Not checked yet</span>'
+      : result.loading
+        ? '<span class="watch-state">Checking…</span>'
+        : result.error
+          ? '<span class="watch-state bad">' + result.error + '</span>'
+          : result.events.length
+            ? result.events.map(x => '<span class="watch-event">' + x + '</span>').join("")
+            : '<span class="watch-state">No tracked event detected</span>';
+    row.innerHTML = `
+      <div class="watch-symbol">
+        <strong>${symbol}</strong>
+        <span>${result?.price ? money(result.price) : "—"}</span>
+      </div>
+      <div class="watch-events">${eventHtml}</div>
+      <div class="watch-actions">
+        <button class="secondary watch-check" type="button" data-symbol="${symbol}">Check</button>
+        <button class="watch-remove" type="button" data-remove="${symbol}" aria-label="Remove ${symbol}">×</button>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+}
+
+async function checkWatchSymbol(symbol) {
+  watchResults[symbol] = { loading: true };
+  renderWatchlist();
+  try {
+    const resp = await fetch("/api/market/" + encodeURIComponent(symbol));
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || "Unable to scan");
+    watchResults[symbol] = {
+      loading: false,
+      price: Number(data.price),
+      events: detectWatchEvents(data),
+      checkedAt: new Date().toISOString()
+    };
+  } catch (err) {
+    watchResults[symbol] = { loading: false, error: err.message || "Scan failed", events: [] };
+  }
+  renderWatchlist();
+}
+
+document.getElementById("addWatchBtn").addEventListener("click", () => {
+  const input = document.getElementById("watchTicker");
+  const symbol = input.value.trim().toUpperCase();
+  if (!/^[A-Z0-9.\-]{1,12}$/.test(symbol)) return;
+  if (!watchSymbols.includes(symbol)) watchSymbols.push(symbol);
+  watchSymbols = watchSymbols.slice(0, 20);
+  saveWatchlist();
+  input.value = "";
+  renderWatchlist();
+});
+
+document.getElementById("watchTicker").addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    document.getElementById("addWatchBtn").click();
+  }
+});
+
+document.getElementById("watchList").addEventListener("click", e => {
+  const check = e.target.closest(".watch-check");
+  if (check) return checkWatchSymbol(check.dataset.symbol);
+  const remove = e.target.closest("[data-remove]");
+  if (remove) {
+    watchSymbols = watchSymbols.filter(x => x !== remove.dataset.remove);
+    delete watchResults[remove.dataset.remove];
+    saveWatchlist();
+    renderWatchlist();
+  }
+});
+
+renderWatchlist();
+
 document.getElementById("loadMarketBtn").addEventListener("click", loadMarketData);
 document.getElementById("ticker").addEventListener("keydown", e => {
   if (e.key === "Enter") loadMarketData();
