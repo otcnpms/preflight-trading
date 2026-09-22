@@ -11,7 +11,7 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "preflight-trading" });
 });
 
-app.get("*", (_req, res) => {
+app.use((_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
