@@ -6,7 +6,7 @@ const i18n = {
     liveMarketData:"LIVE / MARKET DATA", latestPrice:"Latest price", exchange:"Exchange", gapVsPrevClose:"Gap vs prev close", volume:"Volume", session:"Session", open:"Open", high:"High", low:"Low", previousClose:"Previous close",
     dailyMovingAverages:"Daily moving averages", dailyBollinger:"Daily Bollinger 20 / 2", upper:"Upper", midpoint:"Midpoint", lower:"Lower", source:"Source",
     marketCalendar:"MARKET CALENDAR", macroEventChecks:"Macro / Event Checks", noExtraApi:"No extra API credits", federalReserve:"Federal Reserve", nextFomc:"Next FOMC meeting", daysAway:"Days away", tradeDateStatus:"Trade date status", earnings:"Earnings", upcomingEarnings:"Upcoming earnings", automation:"Automation",
-    step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", loadSchwabOptions:"Load Schwab Options", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
+    step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", loadSchwabOptions:"Load Schwab Options", courseRangeTitle:"Investep course range", rangeOptimal:"OPTIMAL", rangeWithin:"WITHIN LIMITS", rangeOutside:"OUTSIDE RANGE", rangeDue:"REFERENCE REVIEW DUE", rangeSoon:"REFERENCE REVIEW SOON", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
     disclaimer:"PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.",
     notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"course condition(s) still require visual/calibrated review.", lastScan:"Last scan", savedSnapshot:"SAVED SNAPSHOT", rescan:"Rescan", schwabTitle:"Broker Data Connection", schwabCopy:"Connect your Schwab account to test quotes and options-chain access.", schwabConnect:"Connect Schwab", schwabConnected:"CONNECTED", schwabNotConnected:"NOT CONNECTED", schwabConfigured:"Ready to connect", schwabTest:"Test SPY Quote", schwabOptionsTest:"Test SPY Options", schwabDisconnect:"Disconnect", schwabRealtime:"Real-time", schwabDelayed:"Realtime flag unavailable",
     gapUp:"Gap up", gapDown:"Gap down", priceCrossAboveMA20:"Price crossed above MA20", priceCrossBelowMA20:"Price crossed below MA20", ma20CrossAbove40:"MA20 crossed above MA40", ma20CrossBelow40:"MA20 crossed below MA40", priceCrossAboveMid:"Price crossed above Bollinger midpoint", priceCrossBelowMid:"Price crossed below Bollinger midpoint", nearMid:"Price within 0.5% of Bollinger midpoint"
@@ -18,7 +18,7 @@ const i18n = {
     liveMarketData:"DATOS DE MERCADO / EN VIVO", latestPrice:"Último precio", exchange:"Bolsa", gapVsPrevClose:"Gap vs cierre previo", volume:"Volumen", session:"Sesión", open:"Apertura", high:"Máximo", low:"Mínimo", previousClose:"Cierre previo",
     dailyMovingAverages:"Medias móviles diarias", dailyBollinger:"Bollinger diario 20 / 2", upper:"Superior", midpoint:"Punto medio", lower:"Inferior", source:"Fuente",
     marketCalendar:"CALENDARIO DE MERCADO", macroEventChecks:"Revisión Macro / Eventos", noExtraApi:"Sin créditos API adicionales", federalReserve:"Reserva Federal", nextFomc:"Próxima reunión FOMC", daysAway:"Días restantes", tradeDateStatus:"Estado de la fecha", earnings:"Earnings", upcomingEarnings:"Próximos earnings", automation:"Automatización",
-    step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", loadSchwabOptions:"Cargar Opciones Schwab", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
+    step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", loadSchwabOptions:"Cargar Opciones Schwab", courseRangeTitle:"Rango del curso Investep", rangeOptimal:"ÓPTIMO", rangeWithin:"DENTRO DE LÍMITES", rangeOutside:"FUERA DE RANGO", rangeDue:"REVISAR REFERENCIA", rangeSoon:"REVISAR PRONTO", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
     disclaimer:"PreFlight registra el cumplimiento de la metodología. No recomienda comprar, vender ni colocar una operación.",
     notChecked:"Aún no revisado", checking:"Revisando…", noEvent:"No se detectó ningún evento monitoreado", check:"Revisar", autoChecks:"chequeos auto", visualReview:"REVISIÓN VISUAL", developing:"DESARROLLANDO", autoAssisted:"AUTO ASISTIDO", courseRemaining:"condición(es) del curso todavía requieren revisión visual/calibrada.", lastScan:"Último escaneo", savedSnapshot:"SNAPSHOT GUARDADO", rescan:"Revisar de nuevo", schwabTitle:"Conexión de Datos del Broker", schwabCopy:"Conecta tu cuenta de Schwab para probar cotizaciones y acceso a la cadena de opciones.", schwabConnect:"Conectar Schwab", schwabConnected:"CONECTADO", schwabNotConnected:"NO CONECTADO", schwabConfigured:"Listo para conectar", schwabTest:"Probar cotización SPY", schwabOptionsTest:"Probar opciones SPY", schwabDisconnect:"Desconectar", schwabRealtime:"Tiempo real", schwabDelayed:"Indicador realtime no disponible",
     gapUp:"Gap al alza", gapDown:"Gap a la baja", priceCrossAboveMA20:"Precio cruzó por encima de MA20", priceCrossBelowMA20:"Precio cruzó por debajo de MA20", ma20CrossAbove40:"MA20 cruzó por encima de MA40", ma20CrossBelow40:"MA20 cruzó por debajo de MA40", priceCrossAboveMid:"Precio cruzó por encima del punto medio de Bollinger", priceCrossBelowMid:"Precio cruzó por debajo del punto medio de Bollinger", nearMid:"Precio dentro de 0.5% del punto medio de Bollinger"
@@ -38,6 +38,7 @@ function applyLanguage() {
   const schwabOptionsTest=document.getElementById("schwabOptionsTestBtn"); if(schwabOptionsTest) schwabOptionsTest.textContent=t("schwabOptionsTest");
   const schwabDisconnect=document.getElementById("schwabDisconnectBtn"); if(schwabDisconnect) schwabDisconnect.textContent=t("schwabDisconnect");
   const loadSchwabOptions=document.getElementById("loadSchwabOptionsBtn"); if(loadSchwabOptions) loadSchwabOptions.textContent=t("loadSchwabOptions");
+  const courseRangeTitle=document.getElementById("courseRangeTitle"); if(courseRangeTitle) courseRangeTitle.textContent=t("courseRangeTitle");
   renderWatchlist();
   renderChecklist();
   updateStatus();
@@ -1153,6 +1154,81 @@ strategy.addEventListener("change", () => {
 });
 
 
+const investepOptionRanges = {
+  AMZN:{optimal:[140,230],limits:[130,240],date:"2026-05-19"}, AAPL:{optimal:[35,90],limits:[30,100],date:"2026-05-19"},
+  GOOG:{optimal:[60,170],limits:[50,170],date:"2026-05-19"}, META:{optimal:[150,210],limits:[145,220],date:"2026-05-19"},
+  MSFT:{optimal:[60,120],limits:[50,130],date:"2026-05-19"}, NFLX:{optimal:[40,80],limits:[35,85],date:"2026-05-19"},
+  TSLA:{optimal:[100,250],limits:[90,250],date:"2026-05-19"}, PLTR:{optimal:[140,300],limits:[135,310],date:"2026-05-19"},
+  IBM:{optimal:[115,220],limits:[110,230],date:"2026-06-10"}, ORCL:{optimal:[80,130],limits:[70,140],date:"2026-05-19"},
+  NOW:{optimal:[62,87],limits:[55,95],date:"2026-07-13"}, AMD:{optimal:[150,235],limits:[140,240],date:"2026-05-19"},
+  MU:{optimal:[400,600],limits:[400,650],date:"2026-05-19"}, NVDA:{optimal:[80,170],limits:[75,175],date:"2026-02-17"},
+  QCOM:{optimal:[80,160],limits:[70,170],date:"2026-05-19"}, AVGO:{optimal:[70,140],limits:[65,145],date:"2026-05-19"},
+  INTC:{optimal:[50,80],limits:[45,85],date:"2026-06-10"}, SOXL:{optimal:[150,240],limits:[120,250],date:"2026-05-19"},
+  DASH:{optimal:[160,240],limits:[155,245],date:"2026-05-19"}, LYFT:{optimal:[25,50],limits:[25,55],date:"2026-05-19"},
+  UBER:{optimal:[35,60],limits:[30,65],date:"2026-05-19"}, HD:{optimal:[120,240],limits:[120,240],date:"2026-05-19"},
+  LOW:{optimal:[120,220],limits:[110,225],date:"2026-05-19"}, WMT:{optimal:[60,110],limits:[55,115],date:"2026-02-17"},
+  DIA:{optimal:[100,200],limits:[95,210],date:"2026-05-19"}, QQQ:{optimal:[35,55],limits:[30,60],date:"2026-05-19"},
+  SPY:{optimal:[30,45],limits:[25,50],date:"2026-05-19"}, SPX:{optimal:[400,600],limits:[380,620],date:"2026-05-19"},
+  IWM:{optimal:[40,70],limits:[35,70],date:"2026-05-19"}, TNA:{optimal:[40,90],limits:[40,100],date:"2026-05-19"},
+  AXP:{optimal:[85,190],limits:[80,195],date:"2026-05-19"}, C:{optimal:[50,140],limits:[45,150],date:"2026-05-19"},
+  MA:{optimal:[90,175],limits:[85,180],date:"2026-05-19"}, PYPL:{optimal:[50,80],limits:[40,90],date:"2026-05-19"},
+  V:{optimal:[60,170],limits:[55,175],date:"2026-05-19"}, BABA:{optimal:[40,60],limits:[40,70],date:"2026-05-19"},
+  LI:{optimal:[25,60],limits:[25,70],date:"2026-05-19"}, NIO:{optimal:[30,75],limits:[25,75],date:"2026-05-19"},
+  XPEV:{optimal:[50,70],limits:[45,75],date:"2026-05-19"}, GLD:{optimal:[40,80],limits:[40,90],date:"2026-05-19"},
+  SLV:{optimal:[40,75],limits:[35,80],date:"2026-05-19"}, USO:{optimal:[50,80],limits:[45,90],date:"2026-05-19"},
+  COIN:{optimal:[200,300],limits:[195,310],date:"2026-05-19"}, HOOD:{optimal:[100,150],limits:[90,160],date:"2026-05-19"},
+  CVS:{optimal:[60,120],limits:[55,130],date:"2026-05-19"}, MRNA:{optimal:[50,130],limits:[50,130],date:"2026-05-19"},
+  PFE:{optimal:[30,70],limits:[25,75],date:"2026-05-19"}, BA:{optimal:[60,170],limits:[50,180],date:"2026-05-19"},
+  URA:{optimal:[55,80],limits:[55,85],date:"2026-05-19"}, CCL:{optimal:[40,60],limits:[35,65],date:"2026-05-19"},
+  RCL:{optimal:[80,150],limits:[75,155],date:"2026-05-19"}, AAL:{optimal:[40,70],limits:[30,70],date:"2026-05-19"},
+  DAL:{optimal:[40,65],limits:[35,70],date:"2026-05-19"}
+};
+
+function courseReferenceFreshness(dateString) {
+  const selected = document.getElementById("tradeDate").value;
+  const asOf = selected ? localDateOnly(selected) : new Date();
+  const analyzed = localDateOnly(dateString);
+  const days = Math.floor((asOf - analyzed) / 86400000);
+  if (days > 183) return "due";
+  if (days > 150) return "soon";
+  return "current";
+}
+
+function updateCourseRange(symbol, premiumPerShare) {
+  const box=document.getElementById("courseRangeBox");
+  const ref=investepOptionRanges[symbol];
+  if(!ref || !Number.isFinite(premiumPerShare)) {
+    box.hidden=true;
+    return;
+  }
+  // Schwab quotes option premium per share; the course table is recorded as total premium per 1 contract.
+  const contractCost=premiumPerShare*100;
+  document.getElementById("courseOptimal").textContent=`${ref.optimal[0]}–${ref.optimal[1]}`;
+  document.getElementById("courseMinMax").textContent=`${ref.limits[0]}–${ref.limits[1]}`;
+  document.getElementById("courseAnalysisDate").textContent=formatShortDate(ref.date);
+  document.getElementById("courseSelectedCost").textContent=money(contractCost);
+
+  let rangeState="outside";
+  if(contractCost>=ref.optimal[0] && contractCost<=ref.optimal[1]) rangeState="optimal";
+  else if(contractCost>=ref.limits[0] && contractCost<=ref.limits[1]) rangeState="within";
+
+  const freshness=courseReferenceFreshness(ref.date);
+  const status=document.getElementById("courseRangeStatus");
+  status.className="range-status " + rangeState;
+  status.textContent=rangeState==="optimal" ? t("rangeOptimal") : rangeState==="within" ? t("rangeWithin") : t("rangeOutside");
+
+  const note=document.getElementById("courseRangeNote");
+  const freshText=freshness==="due" ? t("rangeDue") : freshness==="soon" ? t("rangeSoon") : "";
+  note.textContent=(currentLang==="es"
+    ? "Comparación = prima Schwab × 100 (1 contrato). Referencia fechada del curso; no es una recomendación."
+    : "Comparison = Schwab premium × 100 (1 contract). Dated course reference; not a trade recommendation.") +
+    (freshText ? " · " + freshText : "");
+  box.hidden=false;
+
+  const topRange=document.getElementById("priceRange");
+  if(topRange) topRange.value=`Optimal ${ref.optimal[0]}–${ref.optimal[1]} · Min/Max ${ref.limits[0]}–${ref.limits[1]}`;
+}
+
 let schwabOptionChain = null;
 
 function flattenSchwabChain(data) {
@@ -1222,10 +1298,10 @@ function applySelectedSchwabContract() {
     : Number(state.market?.price);
   if (Number.isFinite(spot)) document.getElementById("spotPrice").value = spot.toFixed(2);
   const mid = Number.isFinite(contract.bid) && Number.isFinite(contract.ask) ? (contract.bid + contract.ask)/2 : contract.mark;
-  if (Number.isFinite(mid)) document.getElementById("entryPrice").value = mid.toFixed(2);
 
   document.getElementById("chainStatus").textContent =
-    `${contract.symbol || type + " " + strike} · Bid ${money(contract.bid)} · Ask ${money(contract.ask)} · Mid ${money(mid)}`;
+    `${contract.symbol || type + " " + strike} · Bid ${money(contract.bid)} · Ask ${money(contract.ask)} · Reference mid ${money(mid)}`;
+  updateCourseRange(document.getElementById("ticker").value.trim().toUpperCase(), mid);
   updateMetrics();
 }
 
@@ -1239,6 +1315,7 @@ document.getElementById("loadSchwabOptionsBtn").addEventListener("click", async 
     return;
   }
   picker.hidden = false;
+  document.getElementById("courseRangeBox").hidden = true;
   status.textContent = currentLang === "es" ? `Cargando opciones Schwab para ${symbol}…` : `Loading Schwab options for ${symbol}…`;
   try {
     const resp = await fetch("/api/schwab/options/" + encodeURIComponent(symbol));
@@ -1327,7 +1404,19 @@ function updateMetrics() {
 });
 
 document.getElementById("tradeDate").valueAsDate = new Date();
-document.getElementById("tradeDate").addEventListener("change", updateFedContext);
+document.getElementById("tradeDate").addEventListener("change", () => {
+  updateFedContext();
+  const exp=document.getElementById("chainExpiration").value;
+  const typ=document.getElementById("chainType").value;
+  const str=Number(document.getElementById("chainStrike").value);
+  if(exp && typ && Number.isFinite(str)) {
+    const contract=(schwabOptionChain||[]).find(r=>r.expiration===exp && r.type===typ && r.strike===str);
+    if(contract){
+      const mid=Number.isFinite(contract.bid)&&Number.isFinite(contract.ask)?(contract.bid+contract.ask)/2:contract.mark;
+      updateCourseRange(document.getElementById("ticker").value.trim().toUpperCase(), mid);
+    }
+  }
+});
 updateFedContext();
 
 document.getElementById("resetBtn").addEventListener("click", () => {
