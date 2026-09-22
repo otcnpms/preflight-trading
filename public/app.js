@@ -6,7 +6,7 @@ const i18n = {
     liveMarketData:"LIVE / MARKET DATA", latestPrice:"Latest price", exchange:"Exchange", gapVsPrevClose:"Gap vs prev close", volume:"Volume", session:"Session", open:"Open", high:"High", low:"Low", previousClose:"Previous close",
     dailyMovingAverages:"Daily moving averages", dailyBollinger:"Daily Bollinger 20 / 2", upper:"Upper", midpoint:"Midpoint", lower:"Lower", source:"Source",
     marketCalendar:"MARKET CALENDAR", macroEventChecks:"Macro / Event Checks", noExtraApi:"No extra API credits", federalReserve:"Federal Reserve", nextFomc:"Next FOMC meeting", daysAway:"Days away", tradeDateStatus:"Trade date status", earnings:"Earnings", upcomingEarnings:"Upcoming earnings", automation:"Automation",
-    step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
+    step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", loadSchwabOptions:"Load Schwab Options", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
     disclaimer:"PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.",
     notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"course condition(s) still require visual/calibrated review.", lastScan:"Last scan", savedSnapshot:"SAVED SNAPSHOT", rescan:"Rescan", schwabTitle:"Broker Data Connection", schwabCopy:"Connect your Schwab account to test quotes and options-chain access.", schwabConnect:"Connect Schwab", schwabConnected:"CONNECTED", schwabNotConnected:"NOT CONNECTED", schwabConfigured:"Ready to connect", schwabTest:"Test SPY Quote", schwabOptionsTest:"Test SPY Options", schwabDisconnect:"Disconnect", schwabRealtime:"Real-time", schwabDelayed:"Realtime flag unavailable",
     gapUp:"Gap up", gapDown:"Gap down", priceCrossAboveMA20:"Price crossed above MA20", priceCrossBelowMA20:"Price crossed below MA20", ma20CrossAbove40:"MA20 crossed above MA40", ma20CrossBelow40:"MA20 crossed below MA40", priceCrossAboveMid:"Price crossed above Bollinger midpoint", priceCrossBelowMid:"Price crossed below Bollinger midpoint", nearMid:"Price within 0.5% of Bollinger midpoint"
@@ -18,7 +18,7 @@ const i18n = {
     liveMarketData:"DATOS DE MERCADO / EN VIVO", latestPrice:"Último precio", exchange:"Bolsa", gapVsPrevClose:"Gap vs cierre previo", volume:"Volumen", session:"Sesión", open:"Apertura", high:"Máximo", low:"Mínimo", previousClose:"Cierre previo",
     dailyMovingAverages:"Medias móviles diarias", dailyBollinger:"Bollinger diario 20 / 2", upper:"Superior", midpoint:"Punto medio", lower:"Inferior", source:"Fuente",
     marketCalendar:"CALENDARIO DE MERCADO", macroEventChecks:"Revisión Macro / Eventos", noExtraApi:"Sin créditos API adicionales", federalReserve:"Reserva Federal", nextFomc:"Próxima reunión FOMC", daysAway:"Días restantes", tradeDateStatus:"Estado de la fecha", earnings:"Earnings", upcomingEarnings:"Próximos earnings", automation:"Automatización",
-    step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
+    step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", loadSchwabOptions:"Cargar Opciones Schwab", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
     disclaimer:"PreFlight registra el cumplimiento de la metodología. No recomienda comprar, vender ni colocar una operación.",
     notChecked:"Aún no revisado", checking:"Revisando…", noEvent:"No se detectó ningún evento monitoreado", check:"Revisar", autoChecks:"chequeos auto", visualReview:"REVISIÓN VISUAL", developing:"DESARROLLANDO", autoAssisted:"AUTO ASISTIDO", courseRemaining:"condición(es) del curso todavía requieren revisión visual/calibrada.", lastScan:"Último escaneo", savedSnapshot:"SNAPSHOT GUARDADO", rescan:"Revisar de nuevo", schwabTitle:"Conexión de Datos del Broker", schwabCopy:"Conecta tu cuenta de Schwab para probar cotizaciones y acceso a la cadena de opciones.", schwabConnect:"Conectar Schwab", schwabConnected:"CONECTADO", schwabNotConnected:"NO CONECTADO", schwabConfigured:"Listo para conectar", schwabTest:"Probar cotización SPY", schwabOptionsTest:"Probar opciones SPY", schwabDisconnect:"Desconectar", schwabRealtime:"Tiempo real", schwabDelayed:"Indicador realtime no disponible",
     gapUp:"Gap al alza", gapDown:"Gap a la baja", priceCrossAboveMA20:"Precio cruzó por encima de MA20", priceCrossBelowMA20:"Precio cruzó por debajo de MA20", ma20CrossAbove40:"MA20 cruzó por encima de MA40", ma20CrossBelow40:"MA20 cruzó por debajo de MA40", priceCrossAboveMid:"Precio cruzó por encima del punto medio de Bollinger", priceCrossBelowMid:"Precio cruzó por debajo del punto medio de Bollinger", nearMid:"Precio dentro de 0.5% del punto medio de Bollinger"
@@ -37,6 +37,7 @@ function applyLanguage() {
   const schwabTest=document.getElementById("schwabTestBtn"); if(schwabTest) schwabTest.textContent=t("schwabTest");
   const schwabOptionsTest=document.getElementById("schwabOptionsTestBtn"); if(schwabOptionsTest) schwabOptionsTest.textContent=t("schwabOptionsTest");
   const schwabDisconnect=document.getElementById("schwabDisconnectBtn"); if(schwabDisconnect) schwabDisconnect.textContent=t("schwabDisconnect");
+  const loadSchwabOptions=document.getElementById("loadSchwabOptionsBtn"); if(loadSchwabOptions) loadSchwabOptions.textContent=t("loadSchwabOptions");
   renderWatchlist();
   renderChecklist();
   updateStatus();
@@ -1150,6 +1151,112 @@ strategyPresent.addEventListener("change", () => {
 strategy.addEventListener("change", () => {
   renderStrategyModule(strategy.value);
 });
+
+
+let schwabOptionChain = null;
+
+function flattenSchwabChain(data) {
+  const rows = [];
+  const addMap = (map, type) => {
+    for (const [expKey, strikes] of Object.entries(map || {})) {
+      const expiration = expKey.split(":")[0];
+      for (const [strike, contracts] of Object.entries(strikes || {})) {
+        for (const contract of (Array.isArray(contracts) ? contracts : [])) {
+          rows.push({
+            expiration,
+            type,
+            strike: Number(contract.strikePrice ?? strike),
+            bid: Number(contract.bid),
+            ask: Number(contract.ask),
+            mark: Number(contract.mark),
+            last: Number(contract.last),
+            symbol: contract.symbol || "",
+            underlyingPrice: Number(data.underlyingPrice ?? data.underlying?.mark ?? data.underlying?.last)
+          });
+        }
+      }
+    }
+  };
+  addMap(data.callExpDateMap, "CALL");
+  addMap(data.putExpDateMap, "PUT");
+  return rows.filter(r => r.expiration && Number.isFinite(r.strike));
+}
+
+function populateChainExpirations(rows) {
+  const select = document.getElementById("chainExpiration");
+  const expirations = [...new Set(rows.map(r => r.expiration))].sort();
+  select.innerHTML = '<option value="">Select expiration</option>' +
+    expirations.map(x => `<option value="${x}">${x}</option>`).join("");
+  document.getElementById("chainType").value = "";
+  document.getElementById("chainStrike").innerHTML = '<option value="">Select strike</option>';
+}
+
+function populateChainStrikes() {
+  const expiration = document.getElementById("chainExpiration").value;
+  const type = document.getElementById("chainType").value;
+  const strikeSelect = document.getElementById("chainStrike");
+  const rows = (schwabOptionChain || []).filter(r => r.expiration === expiration && r.type === type);
+  const strikes = [...new Set(rows.map(r => r.strike))].sort((x,y) => x-y);
+  strikeSelect.innerHTML = '<option value="">Select strike</option>' +
+    strikes.map(x => `<option value="${x}">${money(x)}</option>`).join("");
+  document.getElementById("chainStatus").textContent = rows.length
+    ? `${rows.length} Schwab contract quote(s) available for ${expiration} ${type}.`
+    : (expiration && type ? "No contracts returned for that expiration/type." : "Choose expiration and type.");
+}
+
+function applySelectedSchwabContract() {
+  const expiration = document.getElementById("chainExpiration").value;
+  const type = document.getElementById("chainType").value;
+  const strike = Number(document.getElementById("chainStrike").value);
+  if (!expiration || !type || !Number.isFinite(strike)) return;
+  const contract = (schwabOptionChain || []).find(r => r.expiration===expiration && r.type===type && r.strike===strike);
+  if (!contract) return;
+
+  document.getElementById("expiration").value = expiration;
+  document.getElementById("optionType").value = type;
+  document.getElementById("strikePrice").value = contract.strike.toFixed(2);
+  if (Number.isFinite(contract.bid)) document.getElementById("bid").value = contract.bid.toFixed(2);
+  if (Number.isFinite(contract.ask)) document.getElementById("ask").value = contract.ask.toFixed(2);
+  const spot = Number.isFinite(contract.underlyingPrice)
+    ? contract.underlyingPrice
+    : Number(state.market?.price);
+  if (Number.isFinite(spot)) document.getElementById("spotPrice").value = spot.toFixed(2);
+  const mid = Number.isFinite(contract.bid) && Number.isFinite(contract.ask) ? (contract.bid + contract.ask)/2 : contract.mark;
+  if (Number.isFinite(mid)) document.getElementById("entryPrice").value = mid.toFixed(2);
+
+  document.getElementById("chainStatus").textContent =
+    `${contract.symbol || type + " " + strike} · Bid ${money(contract.bid)} · Ask ${money(contract.ask)} · Mid ${money(mid)}`;
+  updateMetrics();
+}
+
+document.getElementById("loadSchwabOptionsBtn").addEventListener("click", async () => {
+  const symbol = document.getElementById("ticker").value.trim().toUpperCase();
+  const picker = document.getElementById("optionChainPicker");
+  const status = document.getElementById("chainStatus");
+  if (!symbol) {
+    status.textContent = currentLang === "es" ? "Ingresa un ticker primero." : "Enter a ticker first.";
+    picker.hidden = false;
+    return;
+  }
+  picker.hidden = false;
+  status.textContent = currentLang === "es" ? `Cargando opciones Schwab para ${symbol}…` : `Loading Schwab options for ${symbol}…`;
+  try {
+    const resp = await fetch("/api/schwab/options/" + encodeURIComponent(symbol));
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || "Unable to load Schwab options.");
+    schwabOptionChain = flattenSchwabChain(data);
+    populateChainExpirations(schwabOptionChain);
+    status.textContent = currentLang === "es"
+      ? `${schwabOptionChain.length} cotizaciones de contratos cargadas para ${symbol}.`
+      : `${schwabOptionChain.length} contract quotes loaded for ${symbol}.`;
+  } catch (err) {
+    status.textContent = err.message;
+  }
+});
+
+document.getElementById("chainExpiration").addEventListener("change", populateChainStrikes);
+document.getElementById("chainType").addEventListener("change", populateChainStrikes);
+document.getElementById("chainStrike").addEventListener("change", applySelectedSchwabContract);
 
 function number(id) {
   const v = parseFloat(document.getElementById(id).value);
