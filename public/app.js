@@ -10,6 +10,75 @@ const coreItems = [
 ];
 
 const state = { checks: Object.fromEntries(coreItems.map(x => [x.id, null])), market: null };
+
+const fomcMeetings = [
+  { start: "2026-01-27", end: "2026-01-28" },
+  { start: "2026-03-17", end: "2026-03-18" },
+  { start: "2026-04-28", end: "2026-04-29" },
+  { start: "2026-06-16", end: "2026-06-17" },
+  { start: "2026-07-28", end: "2026-07-29" },
+  { start: "2026-09-15", end: "2026-09-16" },
+  { start: "2026-10-27", end: "2026-10-28" },
+  { start: "2026-12-08", end: "2026-12-09" },
+  { start: "2027-01-26", end: "2027-01-27" },
+  { start: "2027-03-16", end: "2027-03-17" },
+  { start: "2027-04-27", end: "2027-04-28" },
+  { start: "2027-06-08", end: "2027-06-09" },
+  { start: "2027-07-27", end: "2027-07-28" },
+  { start: "2027-09-14", end: "2027-09-15" },
+  { start: "2027-10-26", end: "2027-10-27" },
+  { start: "2027-12-07", end: "2027-12-08" }
+];
+
+function localDateOnly(value) {
+  const [y,m,d] = value.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatShortDate(value) {
+  return localDateOnly(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function updateFedContext() {
+  const tradeDateValue = document.getElementById("tradeDate").value;
+  if (!tradeDateValue) return;
+
+  const tradeDate = localDateOnly(tradeDateValue);
+  const oneDay = 86400000;
+
+  const current = fomcMeetings.find(m => {
+    const start = localDateOnly(m.start);
+    const end = localDateOnly(m.end);
+    return tradeDate >= start && tradeDate <= end;
+  });
+
+  const next = fomcMeetings.find(m => localDateOnly(m.end) >= tradeDate);
+  const nextDateEl = document.getElementById("fedNextDate");
+  const daysAwayEl = document.getElementById("fedDaysAway");
+  const statusEl = document.getElementById("fedTradeStatus");
+
+  if (!next) {
+    nextDateEl.textContent = "Schedule not loaded";
+    daysAwayEl.textContent = "—";
+    statusEl.textContent = "Manual review";
+    return;
+  }
+
+  nextDateEl.textContent = formatShortDate(next.start) + "–" + localDateOnly(next.end).getDate();
+  const daysAway = Math.ceil((localDateOnly(next.start) - tradeDate) / oneDay);
+  daysAwayEl.textContent = current ? "0" : String(Math.max(0, daysAway));
+
+  if (current) {
+    statusEl.textContent = "FOMC meeting day";
+  } else if (daysAway === 1) {
+    statusEl.textContent = "Meeting tomorrow";
+  } else if (daysAway >= 0 && daysAway <= 3) {
+    statusEl.textContent = "Meeting within 3 days";
+  } else {
+    statusEl.textContent = "No meeting within 3 days";
+  }
+}
+
 const list = document.getElementById("coreChecklist");
 
 function money(v) {
@@ -191,6 +260,8 @@ function updateMetrics() {
 ["bid","ask","spotPrice","strikePrice"].forEach(id => document.getElementById(id).addEventListener("input", updateMetrics));
 
 document.getElementById("tradeDate").valueAsDate = new Date();
+document.getElementById("tradeDate").addEventListener("change", updateFedContext);
+updateFedContext();
 
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (!confirm("Reset this Pre-Flight?")) return;
