@@ -199,3 +199,18 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 .option-chain-picker{margin-bottom:14px;padding:14px;border:1px solid #2d7a58;background:#0b1a19;border-radius:13px}
 .option-chain-picker[hidden]{display:none!important}
 .chain-status{margin-top:10px;font-size:11px}
+
+.course-range-box{margin-top:12px;padding:12px;border:1px solid #29425f;border-radius:11px;background:#07111f}
+.course-range-box[hidden]{display:none!important}
+.course-range-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+.course-range-head strong{font-size:12px}
+.range-status{font-size:9px;font-weight:900;letter-spacing:.05em;border-radius:999px;padding:5px 8px;border:1px solid #38506d;color:var(--muted)}
+.range-status.optimal{color:var(--good);border-color:#2d7a58;background:#0d251c}
+.range-status.within{color:var(--gold);border-color:#725a2c;background:#241c0c}
+.range-status.outside{color:var(--bad);border-color:#814545;background:#261111}
+.course-range-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.course-range-grid>div{display:flex;flex-direction:column;gap:4px;padding:8px;border:1px solid #203651;border-radius:9px;background:#0a1524}
+.course-range-grid span{color:var(--muted);font-size:9px}
+.course-range-grid strong{font-size:11px}
+.course-range-note{margin:9px 0 0;color:var(--muted);font-size:9px;line-height:1.4}
+@media(max-width:760px){.course-range-grid{grid-template-columns:repeat(2,1fr)}}
