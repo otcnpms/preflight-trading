@@ -130,9 +130,32 @@ async function loadMarketData() {
     document.getElementById("bbMiddle").textContent = money(bb.middle);
     document.getElementById("bbLower").textContent = money(bb.lower);
 
+    function paintTimeframe(prefix, tf, statusId) {
+      const latest = tf?.latest || {};
+      const tma = tf?.movingAverages || {};
+      const tbb = tf?.bollinger || {};
+      document.getElementById(prefix + "Price").textContent = money(latest.close);
+      document.getElementById(prefix + "BbUpper").textContent = money(tbb.upper);
+      document.getElementById(prefix + "BbMid").textContent = money(tbb.middle);
+      document.getElementById(prefix + "BbLower").textContent = money(tbb.lower);
+      document.getElementById(prefix + "Ma20").textContent = money(tma.ma20);
+      document.getElementById(prefix + "Ma40").textContent = money(tma.ma40);
+      document.getElementById(prefix + "Ma100").textContent = money(tma.ma100);
+      document.getElementById(prefix + "Ma200").textContent = money(tma.ma200);
+      if (statusId) {
+        document.getElementById(statusId).textContent = tf?.available
+          ? "Observation only · no PASS/FAIL automation yet"
+          : (tf?.error || "Timeframe data unavailable");
+      }
+    }
+
+    paintTimeframe("tf15", data.timeframes?.min15, "tf15Status");
+    paintTimeframe("tf1h", data.timeframes?.hour1, "tf1hStatus");
+    paintTimeframe("tfD", data.timeframes?.daily);
+
     if (Number.isFinite(Number(data.price))) document.getElementById("spotPrice").value = Number(data.price).toFixed(2);
     updateMetrics();
-    msg.textContent = `${symbol} loaded. Daily MAs and Bollinger values are calculated from the returned price history.`;
+    msg.textContent = `${symbol} loaded. 15m, 1H and Daily context calculated from returned price history.`;
   } catch (err) {
     document.getElementById("marketCard").hidden = true;
     msg.textContent = err.message;
