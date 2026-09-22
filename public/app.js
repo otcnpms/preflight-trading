@@ -365,6 +365,18 @@ const strategyDefinitions = {
       "Cambiar a 15 minutos y esperar que el precio comience a rebotar desde esa zona.",
       "En 1 Hora, esperar una vela de confirmación alcista."
     ]
+  },
+  E5: {
+    title: "Tendencia lateral · apertura fuera de Bollinger al alza sin volatilidad",
+    meta: "Bollinger · temporalidad: 15 minutos · apertura del mercado",
+    direction: "Course-defined setup direction: bearish / put. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "En temporalidad 15 minutos, en Bollinger la tendencia debe ser totalmente lateral y sin volatilidad.",
+      "El precio debe aperturar con un salto y quedar extremadamente alejado del oscilador superior, en zona de sobrecompra.",
+      "Observar que el precio comience a bajar después de la apertura.",
+      "Según la metodología del curso, una vez cumplidos los requisitos la ejecución se contempla dentro de los primeros 5 minutos de la apertura del mercado.",
+      "La nota del curso recomienda comenzar el análisis unos minutos antes de la apertura para confirmar que el precio abrirá con un salto considerable al alza respecto al cierre del día anterior."
+    ]
   }
 };
 
