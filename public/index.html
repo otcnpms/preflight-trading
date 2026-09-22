@@ -241,6 +241,19 @@
           <label>Strike<select id="chainStrike"><option value="">Select strike</option></select></label>
         </div>
         <div class="chain-status muted" id="chainStatus">Load a ticker to browse Schwab option contracts.</div>
+        <div class="course-range-box" id="courseRangeBox" hidden>
+          <div class="course-range-head">
+            <strong id="courseRangeTitle">Investep course range</strong>
+            <span id="courseRangeStatus" class="range-status">—</span>
+          </div>
+          <div class="course-range-grid">
+            <div><span>Optimal</span><strong id="courseOptimal">—</strong></div>
+            <div><span>Min / Max</span><strong id="courseMinMax">—</strong></div>
+            <div><span>Analysis date</span><strong id="courseAnalysisDate">—</strong></div>
+            <div><span>Selected contract cost</span><strong id="courseSelectedCost">—</strong></div>
+          </div>
+          <p class="course-range-note" id="courseRangeNote"></p>
+        </div>
       </div>
       <div class="grid four">
         <label>Type<select id="optionType"><option value="">—</option><option>CALL</option><option>PUT</option></select></label>
@@ -250,7 +263,7 @@
         <label>Bid<input id="bid" type="number" step="0.01" /></label>
         <label>Ask<input id="ask" type="number" step="0.01" /></label>
         <label>Contracts<input id="contracts" type="number" min="1" step="1" /></label>
-        <label>Entry Price<input id="entryPrice" type="number" step="0.01" /></label>
+        <label>Actual Entry / Fill Price<input id="entryPrice" type="number" step="0.01" placeholder="Confirm after trade" /></label>
       </div>
       <div class="option-summary-grid">
         <div class="metric"><span>DTE</span><strong id="dte">—</strong></div>
