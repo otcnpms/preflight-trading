@@ -214,3 +214,15 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 .course-range-grid strong{font-size:11px}
 .course-range-note{margin:9px 0 0;color:var(--muted);font-size:9px;line-height:1.4}
 @media(max-width:760px){.course-range-grid{grid-template-columns:repeat(2,1fr)}}
+
+.watch-head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.opportunity-board{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 12px}
+.opportunity-board>div{padding:10px;border:1px solid #203651;border-radius:10px;background:#081321;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.opportunity-board span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.opportunity-board strong{font-size:13px}
+.watch-transition{display:inline-flex;width:max-content;margin-top:5px;padding:3px 6px;border-radius:999px;border:1px solid #38506d;font-size:8px;font-weight:900;letter-spacing:.05em}
+.watch-transition.new{color:var(--gold);border-color:#725a2c}
+.watch-transition.still-active{color:var(--good);border-color:#2d7a58}
+.watch-transition.no-longer-active{color:var(--bad);border-color:#814545}
+.strategy-handoff{margin-top:10px;font-size:9px;padding:6px 9px}
+@media(max-width:760px){.opportunity-board{grid-template-columns:repeat(2,1fr)}}
