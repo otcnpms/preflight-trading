@@ -423,6 +423,18 @@ const strategyDefinitions = {
       "Si al abrir se expande la volatilidad inmediatamente, el material del curso considera la condición válida para la estrategia.",
       "Según la metodología del curso, una vez cumplidos los requisitos se contempla tomar posición en CALL."
     ]
+  },
+  E10: {
+    title: "Cambio de tendencia a la baja · Bollinger 15 minutos",
+    meta: "Bollinger · temporalidad: 15 minutos · gap + punto medio + línea de tendencia",
+    direction: "Course-defined setup direction: bearish / put. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "En 15 minutos, la tendencia debe ser alcista o lateral.",
+      "Trazar una línea de tendencia por debajo del precio, bordeando la mayor cantidad de puntos posibles.",
+      "El precio debe abrir con un salto a la baja, rompiendo el punto medio de Bollinger y la línea de tendencia.",
+      "Si al abrir se expande la volatilidad inmediatamente, el material del curso considera la condición válida para la estrategia.",
+      "Según la metodología del curso, una vez cumplidos los requisitos se contempla tomar posición en PUT."
+    ]
   }
 };
 
