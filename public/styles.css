@@ -160,3 +160,16 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
   .watch-actions { width:100%; }
   .watch-check { flex:1; }
 }
+
+.strategy-watch { display:grid; gap:6px; margin-top:9px; }
+.strategy-watch-item { border:1px solid #314b6b; border-radius:10px; background:#091626; overflow:hidden; }
+.strategy-watch-item summary { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; list-style:none; color:#dce8f6; font-size:10px; }
+.strategy-watch-item summary::-webkit-details-marker { display:none; }
+.strategy-watch-item summary strong { color:var(--muted); font-size:9px; font-weight:700; }
+.strategy-watch-code { color:var(--gold); font-weight:900; font-size:11px; }
+.strategy-watch-detail { border-top:1px solid #263d59; padding:8px 10px; }
+.strategy-watch-title { font-size:11px; font-weight:800; margin-bottom:6px; }
+.strategy-watch-line { color:var(--muted); font-size:10px; line-height:1.45; padding:2px 0; }
+.strategy-watch-line.hit { color:var(--good); }
+.strategy-watch-line em { color:#c9d8e8; font-size:8px; font-style:normal; border:1px solid #38506d; border-radius:999px; padding:1px 5px; margin-left:4px; }
+.strategy-watch-visual { color:var(--gold); font-size:9px; margin-top:6px; }
