@@ -11,35 +11,41 @@
   <main class="shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">PRE-TRADE METHODOLOGY</p>
+        <p class="eyebrow" data-i18n="preTradeMethodology">PRE-TRADE METHODOLOGY</p>
         <h1>PreFlight Trading</h1>
-        <p class="sub">Complete the methodology before placing a trade.</p>
+        <p class="sub" data-i18n="completeMethodology">Complete the methodology before placing a trade.</p>
       </div>
-      <div class="status-pill" id="overallStatus">NOT COMPLETE</div>
+      <div class="topbar-actions">
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" data-lang="en" class="lang-btn">EN</button>
+          <button type="button" data-lang="es" class="lang-btn">ES</button>
+        </div>
+        <div class="status-pill" id="overallStatus">NOT COMPLETE</div>
+      </div>
     </header>
 
     <section class="card setup">
       <div class="grid ticker-grid">
-        <label>Ticker<input id="ticker" placeholder="SPY" autocomplete="off" /></label>
-        <label>Date<input id="tradeDate" type="date" /></label>
-        <label>Price Range<input id="priceRange" placeholder="Optional" /></label>
-        <div class="load-wrap"><button class="primary" id="loadMarketBtn">Load Market Data</button></div>
+        <label><span data-i18n="ticker">Ticker</span><input id="ticker" placeholder="SPY" autocomplete="off" /></label>
+        <label><span data-i18n="date">Date</span><input id="tradeDate" type="date" /></label>
+        <label><span data-i18n="priceRange">Price Range</span><input id="priceRange" placeholder="Optional" data-i18n-placeholder="optional" /></label>
+        <div class="load-wrap"><button class="primary" id="loadMarketBtn" data-i18n="loadMarketData">Load Market Data</button></div>
       </div>
-      <p class="market-message muted" id="marketMessage">Enter a ticker and load market data.</p>
+      <p class="market-message muted" id="marketMessage" data-i18n="enterTickerLoad">Enter a ticker and load market data.</p>
     </section>
 
     <section class="card watch-card">
       <div class="section-head">
         <div>
-          <p class="step">PRE-FLIGHT WATCH</p>
-          <h2>Watchlist Scanner</h2>
-          <p class="muted watch-help">Check one ticker at a time for objective events. This keeps usage inside the current Twelve Data limits.</p>
+          <p class="step" data-i18n="preflightWatch">PRE-FLIGHT WATCH</p>
+          <h2 data-i18n="watchlistScanner">Watchlist Scanner</h2>
+          <p class="muted watch-help" data-i18n="watchHelp">Check one ticker at a time for objective events. This keeps usage inside the current Twelve Data limits.</p>
         </div>
-        <span class="counter" id="watchUsage">Manual scan</span>
+        <span class="counter" id="watchUsage" data-i18n="manualScan">Manual scan</span>
       </div>
       <div class="watch-add">
-        <input id="watchTicker" placeholder="Add ticker (NVDA)" maxlength="12" autocomplete="off" />
-        <button class="secondary" id="addWatchBtn" type="button">Add</button>
+        <input id="watchTicker" placeholder="Add ticker (NVDA)" data-i18n-placeholder="addTicker" maxlength="12" autocomplete="off" />
+        <button class="secondary" id="addWatchBtn" type="button" data-i18n="add">Add</button>
       </div>
       <div id="watchList" class="watch-list"></div>
     </section>
@@ -47,7 +53,7 @@
     <section class="card market-card" id="marketCard" hidden>
       <div class="section-head">
         <div>
-          <p class="step">LIVE / MARKET DATA</p>
+          <p class="step" data-i18n="liveMarketData">LIVE / MARKET DATA</p>
           <h2><span id="marketSymbol">—</span> <span class="muted" id="marketName"></span></h2>
         </div>
         <span class="counter" id="marketTimestamp">—</span>
@@ -55,36 +61,36 @@
 
       <div class="market-hero">
         <div>
-          <span class="market-label">Latest price</span>
+          <span class="market-label" data-i18n="latestPrice">Latest price</span>
           <strong class="market-price" id="marketPrice">—</strong>
           <span id="marketChange" class="market-change">—</span>
         </div>
-        <div class="metric compact"><span>Exchange</span><strong id="marketExchange">—</strong></div>
-        <div class="metric compact"><span>Gap vs prev close</span><strong id="marketGap">—</strong></div>
-        <div class="metric compact"><span>Volume</span><strong id="marketVolume">—</strong></div>
+        <div class="metric compact"><span data-i18n="exchange">Exchange</span><strong id="marketExchange">—</strong></div>
+        <div class="metric compact"><span data-i18n="gapVsPrevClose">Gap vs prev close</span><strong id="marketGap">—</strong></div>
+        <div class="metric compact"><span data-i18n="volume">Volume</span><strong id="marketVolume">—</strong></div>
       </div>
 
       <div class="market-grid">
         <div class="data-group">
-          <h3>Session</h3>
-          <div class="data-line"><span>Open</span><strong id="marketOpen">—</strong></div>
-          <div class="data-line"><span>High</span><strong id="marketHigh">—</strong></div>
-          <div class="data-line"><span>Low</span><strong id="marketLow">—</strong></div>
-          <div class="data-line"><span>Previous close</span><strong id="marketPrevClose">—</strong></div>
+          <h3 data-i18n="session">Session</h3>
+          <div class="data-line"><span data-i18n="open">Open</span><strong id="marketOpen">—</strong></div>
+          <div class="data-line"><span data-i18n="high">High</span><strong id="marketHigh">—</strong></div>
+          <div class="data-line"><span data-i18n="low">Low</span><strong id="marketLow">—</strong></div>
+          <div class="data-line"><span data-i18n="previousClose">Previous close</span><strong id="marketPrevClose">—</strong></div>
         </div>
         <div class="data-group">
-          <h3>Daily moving averages</h3>
+          <h3 data-i18n="dailyMovingAverages">Daily moving averages</h3>
           <div class="data-line"><span>MA 20</span><strong id="ma20">—</strong></div>
           <div class="data-line"><span>MA 40</span><strong id="ma40">—</strong></div>
           <div class="data-line"><span>MA 100</span><strong id="ma100">—</strong></div>
           <div class="data-line"><span>MA 200</span><strong id="ma200">—</strong></div>
         </div>
         <div class="data-group">
-          <h3>Daily Bollinger 20 / 2</h3>
-          <div class="data-line"><span>Upper</span><strong id="bbUpper">—</strong></div>
-          <div class="data-line"><span>Midpoint</span><strong id="bbMiddle">—</strong></div>
-          <div class="data-line"><span>Lower</span><strong id="bbLower">—</strong></div>
-          <div class="data-line"><span>Source</span><strong>Twelve Data</strong></div>
+          <h3 data-i18n="dailyBollinger">Daily Bollinger 20 / 2</h3>
+          <div class="data-line"><span data-i18n="upper">Upper</span><strong id="bbUpper">—</strong></div>
+          <div class="data-line"><span data-i18n="midpoint">Midpoint</span><strong id="bbMiddle">—</strong></div>
+          <div class="data-line"><span data-i18n="lower">Lower</span><strong id="bbLower">—</strong></div>
+          <div class="data-line"><span data-i18n="source">Source</span><strong>Twelve Data</strong></div>
         </div>
       </div>
 
@@ -144,21 +150,21 @@
 
     <section class="card macro-card">
       <div class="section-head">
-        <div><p class="step">MARKET CALENDAR</p><h2>Macro / Event Checks</h2></div>
-        <span class="muted">No extra API credits</span>
+        <div><p class="step" data-i18n="marketCalendar">MARKET CALENDAR</p><h2 data-i18n="macroEventChecks">Macro / Event Checks</h2></div>
+        <span class="muted" data-i18n="noExtraApi">No extra API credits</span>
       </div>
       <div class="macro-grid">
         <div class="data-group">
-          <h3>Federal Reserve</h3>
-          <div class="data-line"><span>Next FOMC meeting</span><strong id="fedNextDate">—</strong></div>
-          <div class="data-line"><span>Days away</span><strong id="fedDaysAway">—</strong></div>
-          <div class="data-line"><span>Trade date status</span><strong id="fedTradeStatus">—</strong></div>
+          <h3 data-i18n="federalReserve">Federal Reserve</h3>
+          <div class="data-line"><span data-i18n="nextFomc">Next FOMC meeting</span><strong id="fedNextDate">—</strong></div>
+          <div class="data-line"><span data-i18n="daysAway">Days away</span><strong id="fedDaysAway">—</strong></div>
+          <div class="data-line"><span data-i18n="tradeDateStatus">Trade date status</span><strong id="fedTradeStatus">—</strong></div>
           <p class="tf-status">Official scheduled FOMC dates. This is context only; it does not determine whether to trade.</p>
         </div>
         <div class="data-group">
-          <h3>Earnings</h3>
-          <div class="data-line"><span>Upcoming earnings</span><strong id="earningsDate">Manual for now</strong></div>
-          <div class="data-line"><span>Automation</span><strong>Next</strong></div>
+          <h3 data-i18n="earnings">Earnings</h3>
+          <div class="data-line"><span data-i18n="upcomingEarnings">Upcoming earnings</span><strong id="earningsDate">Manual for now</strong></div>
+          <div class="data-line"><span data-i18n="automation">Automation</span><strong>Next</strong></div>
           <p class="tf-status">We can add a separate free earnings source without spending Twelve Data's 40-credit earnings-calendar request.</p>
         </div>
       </div>
@@ -166,7 +172,7 @@
 
     <section class="card">
       <div class="section-head">
-        <div><p class="step">STEP 1</p><h2>Core Pre-Flight</h2></div>
+        <div><p class="step" data-i18n="step1">STEP 1</p><h2 data-i18n="corePreflight">Core Pre-Flight</h2></div>
         <span class="counter" id="coreCounter">0 / 8 complete</span>
       </div>
       <div id="coreChecklist" class="checklist"></div>
@@ -174,8 +180,8 @@
 
     <section class="card">
       <div class="section-head">
-        <div><p class="step">STEP 2</p><h2>Optional Strategy Setup</h2></div>
-        <span class="muted">Not required</span>
+        <div><p class="step" data-i18n="step2">STEP 2</p><h2 data-i18n="optionalStrategy">Optional Strategy Setup</h2></div>
+        <span class="muted" data-i18n="notRequired">Not required</span>
       </div>
       <div class="grid two">
         <label>Recognized setup?
@@ -206,7 +212,7 @@
     </section>
 
     <section class="card">
-      <div class="section-head"><div><p class="step">STEP 3</p><h2>Option Details</h2></div></div>
+      <div class="section-head"><div><p class="step" data-i18n="step3">STEP 3</p><h2 data-i18n="optionDetails">Option Details</h2></div></div>
       <div class="grid four">
         <label>Type<select id="optionType"><option value="">—</option><option>CALL</option><option>PUT</option></select></label>
         <label>Expiration<input id="expiration" type="date" /></label>
@@ -230,7 +236,7 @@
     </section>
 
     <section class="card">
-      <div class="section-head"><div><p class="step">STEP 4</p><h2>Position Plan</h2></div></div>
+      <div class="section-head"><div><p class="step" data-i18n="step4">STEP 4</p><h2 data-i18n="positionPlan">Position Plan</h2></div></div>
       <div class="grid three">
         <label>Plan<select id="plan"><option value="">Select</option><option>10%</option><option>35%</option><option>100%</option><option>Other</option></select></label>
         <label>Target / Profit $<input id="targetDollar" type="number" step="0.01" /></label>
@@ -240,11 +246,11 @@
     </section>
 
     <section class="card final-review">
-      <div><p class="step">FINAL REVIEW</p><h2 id="finalHeadline">Pre-Flight incomplete</h2><p id="finalCopy">Complete all required core methodology checks.</p></div>
-      <div class="actions"><button class="secondary" id="resetBtn">Reset</button><button class="primary" id="saveBtn" disabled>Save Pre-Flight</button></div>
+      <div><p class="step" data-i18n="finalReview">FINAL REVIEW</p><h2 id="finalHeadline">Pre-Flight incomplete</h2><p id="finalCopy">Complete all required core methodology checks.</p></div>
+      <div class="actions"><button class="secondary" id="resetBtn" data-i18n="reset">Reset</button><button class="primary" id="saveBtn" disabled data-i18n="savePreflight">Save Pre-Flight</button></div>
     </section>
 
-    <p class="disclaimer">PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.</p>
+    <p class="disclaimer" data-i18n="disclaimer">PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.</p>
   </main>
   <script src="/app.js"></script>
 </body>
