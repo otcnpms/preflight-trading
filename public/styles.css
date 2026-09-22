@@ -92,3 +92,7 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 .timeframe-head strong { font-size:18px; }
 .tf-status { color:var(--muted); font-size:11px; line-height:1.35; margin:10px 0 0; min-height:30px; }
 @media (max-width:760px) { .timeframe-grid { grid-template-columns:1fr; } }
+
+.macro-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.macro-card strong { text-align:right; }
+@media (max-width:760px) { .macro-grid { grid-template-columns:1fr; } }
