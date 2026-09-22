@@ -8,7 +8,7 @@ const i18n = {
     marketCalendar:"MARKET CALENDAR", macroEventChecks:"Macro / Event Checks", noExtraApi:"No extra API credits", federalReserve:"Federal Reserve", nextFomc:"Next FOMC meeting", daysAway:"Days away", tradeDateStatus:"Trade date status", earnings:"Earnings", upcomingEarnings:"Upcoming earnings", automation:"Automation",
     step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
     disclaimer:"PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.",
-    notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"course condition(s) still require visual/calibrated review.", lastScan:"Last scan", savedSnapshot:"SAVED SNAPSHOT", rescan:"Rescan",
+    notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"course condition(s) still require visual/calibrated review.", lastScan:"Last scan", savedSnapshot:"SAVED SNAPSHOT", rescan:"Rescan", schwabTitle:"Broker Data Connection", schwabCopy:"Connect your Schwab account to test quotes and options-chain access.", schwabConnect:"Connect Schwab", schwabConnected:"CONNECTED", schwabNotConnected:"NOT CONNECTED", schwabConfigured:"Ready to connect", schwabTest:"Test SPY Quote", schwabDisconnect:"Disconnect", schwabRealtime:"Real-time", schwabDelayed:"Entitlement status",
     gapUp:"Gap up", gapDown:"Gap down", priceCrossAboveMA20:"Price crossed above MA20", priceCrossBelowMA20:"Price crossed below MA20", ma20CrossAbove40:"MA20 crossed above MA40", ma20CrossBelow40:"MA20 crossed below MA40", priceCrossAboveMid:"Price crossed above Bollinger midpoint", priceCrossBelowMid:"Price crossed below Bollinger midpoint", nearMid:"Price within 0.5% of Bollinger midpoint"
   },
   es: {
@@ -20,7 +20,7 @@ const i18n = {
     marketCalendar:"CALENDARIO DE MERCADO", macroEventChecks:"Revisión Macro / Eventos", noExtraApi:"Sin créditos API adicionales", federalReserve:"Reserva Federal", nextFomc:"Próxima reunión FOMC", daysAway:"Días restantes", tradeDateStatus:"Estado de la fecha", earnings:"Earnings", upcomingEarnings:"Próximos earnings", automation:"Automatización",
     step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
     disclaimer:"PreFlight registra el cumplimiento de la metodología. No recomienda comprar, vender ni colocar una operación.",
-    notChecked:"Aún no revisado", checking:"Revisando…", noEvent:"No se detectó ningún evento monitoreado", check:"Revisar", autoChecks:"chequeos auto", visualReview:"REVISIÓN VISUAL", developing:"DESARROLLANDO", autoAssisted:"AUTO ASISTIDO", courseRemaining:"condición(es) del curso todavía requieren revisión visual/calibrada.", lastScan:"Último escaneo", savedSnapshot:"SNAPSHOT GUARDADO", rescan:"Revisar de nuevo",
+    notChecked:"Aún no revisado", checking:"Revisando…", noEvent:"No se detectó ningún evento monitoreado", check:"Revisar", autoChecks:"chequeos auto", visualReview:"REVISIÓN VISUAL", developing:"DESARROLLANDO", autoAssisted:"AUTO ASISTIDO", courseRemaining:"condición(es) del curso todavía requieren revisión visual/calibrada.", lastScan:"Último escaneo", savedSnapshot:"SNAPSHOT GUARDADO", rescan:"Revisar de nuevo", schwabTitle:"Conexión de Datos del Broker", schwabCopy:"Conecta tu cuenta de Schwab para probar cotizaciones y acceso a la cadena de opciones.", schwabConnect:"Conectar Schwab", schwabConnected:"CONECTADO", schwabNotConnected:"NO CONECTADO", schwabConfigured:"Listo para conectar", schwabTest:"Probar cotización SPY", schwabDisconnect:"Desconectar", schwabRealtime:"Tiempo real", schwabDelayed:"Estado de entitlement",
     gapUp:"Gap al alza", gapDown:"Gap a la baja", priceCrossAboveMA20:"Precio cruzó por encima de MA20", priceCrossBelowMA20:"Precio cruzó por debajo de MA20", ma20CrossAbove40:"MA20 cruzó por encima de MA40", ma20CrossBelow40:"MA20 cruzó por debajo de MA40", priceCrossAboveMid:"Precio cruzó por encima del punto medio de Bollinger", priceCrossBelowMid:"Precio cruzó por debajo del punto medio de Bollinger", nearMid:"Precio dentro de 0.5% del punto medio de Bollinger"
   }
 };
@@ -31,6 +31,11 @@ function applyLanguage() {
   document.querySelectorAll("[data-i18n]").forEach(el => { const k=el.dataset.i18n; el.textContent=t(k); });
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder=t(el.dataset.i18nPlaceholder); });
   document.querySelectorAll(".lang-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.lang===currentLang));
+  const schwabTitle=document.getElementById("schwabTitle"); if(schwabTitle) schwabTitle.textContent=t("schwabTitle");
+  const schwabCopy=document.getElementById("schwabCopy"); if(schwabCopy) schwabCopy.textContent=t("schwabCopy");
+  const schwabConnect=document.getElementById("schwabConnectBtn"); if(schwabConnect) schwabConnect.textContent=t("schwabConnect");
+  const schwabTest=document.getElementById("schwabTestBtn"); if(schwabTest) schwabTest.textContent=t("schwabTest");
+  const schwabDisconnect=document.getElementById("schwabDisconnectBtn"); if(schwabDisconnect) schwabDisconnect.textContent=t("schwabDisconnect");
   renderWatchlist();
   renderChecklist();
   updateStatus();
@@ -711,6 +716,59 @@ Object.keys(watchResults).forEach(symbol => {
 saveWatchResults();
 renderWatchlist();
 
+
+async function refreshSchwabStatus() {
+  const statusEl=document.getElementById("schwabStatus");
+  const connectBtn=document.getElementById("schwabConnectBtn");
+  const testBtn=document.getElementById("schwabTestBtn");
+  const disconnectBtn=document.getElementById("schwabDisconnectBtn");
+  try {
+    const resp=await fetch("/api/schwab/status");
+    const data=await resp.json();
+    if (!data.configured) {
+      statusEl.textContent="NOT CONFIGURED";
+      statusEl.className="schwab-status bad";
+      connectBtn.hidden=true; testBtn.hidden=true; disconnectBtn.hidden=true;
+      return;
+    }
+    if (data.connected) {
+      statusEl.textContent=t("schwabConnected");
+      statusEl.className="schwab-status connected";
+      connectBtn.hidden=true; testBtn.hidden=false; disconnectBtn.hidden=false;
+    } else {
+      statusEl.textContent=t("schwabConfigured");
+      statusEl.className="schwab-status";
+      connectBtn.hidden=false; testBtn.hidden=true; disconnectBtn.hidden=true;
+    }
+  } catch {
+    statusEl.textContent=t("schwabNotConnected");
+    statusEl.className="schwab-status bad";
+  }
+}
+
+document.getElementById("schwabTestBtn").addEventListener("click", async () => {
+  const btn=document.getElementById("schwabTestBtn");
+  const result=document.getElementById("schwabTestResult");
+  btn.disabled=true; result.hidden=false; result.textContent="Testing Schwab SPY quote…";
+  try {
+    const resp=await fetch("/api/schwab/quote/SPY");
+    const data=await resp.json();
+    if(!resp.ok) throw new Error(data.error || "Quote test failed");
+    const rt=data.realtime === true ? t("schwabRealtime") : t("schwabDelayed");
+    result.innerHTML=`<strong>${data.symbol}</strong> · Last ${money(data.last)} · Bid ${money(data.bid)} · Ask ${money(data.ask)} · Mark ${money(data.mark)} · ${rt}`;
+    result.className="schwab-test-result success";
+  } catch(err) {
+    result.textContent=err.message;
+    result.className="schwab-test-result error";
+  } finally { btn.disabled=false; }
+});
+
+document.getElementById("schwabDisconnectBtn").addEventListener("click", async () => {
+  await fetch("/auth/schwab/disconnect",{method:"POST"});
+  document.getElementById("schwabTestResult").hidden=true;
+  refreshSchwabStatus();
+});
+
 document.getElementById("loadMarketBtn").addEventListener("click", loadMarketData);
 document.getElementById("ticker").addEventListener("keydown", e => {
   if (e.key === "Enter") loadMarketData();
@@ -1186,6 +1244,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
 renderChecklist();
 updateMetrics();
 applyLanguage();
+refreshSchwabStatus();
 
 document.addEventListener("click", e => {
   const toggle = e.target.closest(".details-toggle");
