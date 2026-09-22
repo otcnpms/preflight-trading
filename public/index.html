@@ -34,6 +34,23 @@
       <p class="market-message muted" id="marketMessage" data-i18n="enterTickerLoad">Enter a ticker and load market data.</p>
     </section>
 
+    <section class="card schwab-card">
+      <div class="schwab-connect-row">
+        <div>
+          <p class="step">SCHWAB MARKET DATA</p>
+          <h2 id="schwabTitle">Broker Data Connection</h2>
+          <p class="muted schwab-copy" id="schwabCopy">Connect your Schwab account to test quotes and options-chain access.</p>
+        </div>
+        <div class="schwab-actions">
+          <span class="schwab-status" id="schwabStatus">Checking…</span>
+          <a class="primary schwab-connect-btn" id="schwabConnectBtn" href="/auth/schwab/start">Connect Schwab</a>
+          <button class="secondary" id="schwabTestBtn" type="button" hidden>Test SPY Quote</button>
+          <button class="secondary" id="schwabDisconnectBtn" type="button" hidden>Disconnect</button>
+        </div>
+      </div>
+      <div id="schwabTestResult" class="schwab-test-result" hidden></div>
+    </section>
+
     <section class="card watch-card">
       <div class="section-head">
         <div>
