@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#07111f" />
   <title>PreFlight Trading</title>
-  <link rel="stylesheet" href="/styles.css?v=20260922-1623" />
+  <link rel="stylesheet" href="/styles.css?v=20260922-1705" />
 </head>
 <body>
   <main class="shell">
@@ -291,10 +291,38 @@
     <section class="card">
       <div class="section-head"><div><p class="step" data-i18n="step4">STEP 4</p><h2 data-i18n="positionPlan">Position Plan</h2></div></div>
       <div class="grid three">
-        <label>Plan<select id="plan"><option value="">Select</option><option>10%</option><option>35%</option><option>100%</option><option>Other</option></select></label>
-        <label>Target / Profit $<input id="targetDollar" type="number" step="0.01" /></label>
-        <label>Plan %<input id="planPercent" type="number" step="0.01" /></label>
+        <label>Plan
+          <select id="plan">
+            <option value="">Select</option>
+            <option value="10%">10%</option>
+            <option value="35%">35%</option>
+            <option value="100%">100%</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label>Plan %
+          <input id="planPercent" type="number" step="0.01" min="0" placeholder="Auto from plan" />
+        </label>
+        <label>Transaction adjustment $
+          <input id="transactionAdjustment" type="number" step="0.01" value="2.00" />
+        </label>
       </div>
+      <div class="position-plan-box" id="positionPlanBox">
+        <div class="position-plan-head">
+          <strong>Calculated from Actual Entry / Fill</strong>
+          <span id="positionPlanStatus">Enter actual fill + contracts</span>
+        </div>
+        <div class="position-plan-grid">
+          <div><span>Entry option price</span><strong id="planEntryPrice">—</strong></div>
+          <div><span>Entry transaction value</span><strong id="planEntryValue">—</strong></div>
+          <div><span>Plan profit</span><strong id="planProfitDollar">—</strong></div>
+          <div><span>Adjustment</span><strong id="planAdjustmentDollar">—</strong></div>
+          <div><span>Target transaction value</span><strong id="planTargetValue">—</strong></div>
+          <div><span>Target option price</span><strong id="planTargetOptionPrice">—</strong></div>
+        </div>
+        <p class="position-plan-note">The $2 default is a flat per-transaction adjustment and can be changed. Calculations use the confirmed actual fill, not the bid/ask midpoint.</p>
+      </div>
+      <input id="targetDollar" type="hidden" />
       <label class="wide">Trade notes<textarea id="tradeNotes" rows="3" placeholder="Context, invalidation, reinforcement notes, etc."></textarea></label>
     </section>
 
@@ -305,6 +333,6 @@
 
     <p class="disclaimer" data-i18n="disclaimer">PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.</p>
   </main>
-  <script src="/app.js?v=20260922-1623"></script>
+  <script src="/app.js?v=20260922-1705"></script>
 </body>
 </html>
