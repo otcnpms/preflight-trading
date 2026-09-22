@@ -400,6 +400,17 @@ const strategyDefinitions = {
       "En Bollinger de 15 minutos, la primera vela debe quedar completamente fuera del oscilador.",
       "Cuando comience a formarse la vela en el indicador de volumen, debe cruzar la línea roja del indicador Worden Stochastics; el material del curso lo usa como confirmación de compra de contratos call."
     ]
+  },
+  E8: {
+    title: "Efecto Imán · tendencia alcista · medias móviles 20 y 40",
+    meta: "Gráfico 1 hora · Bollinger 15 minutos · volumen + Worden Stochastics",
+    direction: "Course-defined setup direction: bearish / put. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "En las medias móviles, la tendencia debe ser claramente alcista y llevar varios días subiendo.",
+      "El precio debe abrir con un fuerte salto al alza y quedar muy alejado de la media móvil de 20 períodos.",
+      "En Bollinger de 15 minutos, la primera vela debe quedar completamente fuera del oscilador.",
+      "Cuando comience a formarse la vela en el indicador de volumen, debe cruzar la línea roja del indicador Worden Stochastics; el material del curso lo usa como confirmación de compra de contratos put."
+    ]
   }
 };
 
