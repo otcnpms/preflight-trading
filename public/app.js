@@ -670,6 +670,7 @@ function renderWatchlist() {
                   <span class="strategy-watch-code">${s.code}</span>
                   <span>${s.level === "VISUAL REVIEW" ? t("visualReview") : t("developing")}</span>
                   <strong>${s.matched}/${s.known} ${t("autoChecks")}</strong>
+                  <button class="strategy-quick-open" type="button" data-symbol="${symbol}" data-strategy="${s.code}" aria-label="${t("handoff")}">OPEN</button>
                 </summary>
                 <div class="strategy-watch-detail">
                   <div class="strategy-watch-title">${s.label}</div>
@@ -752,7 +753,8 @@ document.getElementById("watchTicker").addEventListener("keydown", e => {
 });
 
 document.getElementById("watchList").addEventListener("click", async e => {
-  const handoff=e.target.closest(".strategy-handoff");
+  const handoff=e.target.closest(".strategy-handoff, .strategy-quick-open");
+  if(e.target.closest(".strategy-quick-open")) e.preventDefault();
   if(handoff){
     const symbol=handoff.dataset.symbol, code=handoff.dataset.strategy;
     const candidate=(watchResults[symbol]?.strategies || []).find(s=>s.code===code);
