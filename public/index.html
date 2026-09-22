@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#07111f" />
   <title>PreFlight Trading</title>
-  <link rel="stylesheet" href="/styles.css?v=20260922-1408" />
+  <link rel="stylesheet" href="/styles.css?v=20260922-1555" />
 </head>
 <body>
   <main class="shell">
@@ -59,7 +59,16 @@
           <h2 data-i18n="watchlistScanner">Watchlist Scanner</h2>
           <p class="muted watch-help" data-i18n="watchHelp">Check one ticker at a time for objective events. This keeps usage inside the current Twelve Data limits.</p>
         </div>
-        <span class="counter" id="watchUsage" data-i18n="manualScan">Manual scan</span>
+        <div class="watch-head-actions">
+          <span class="counter" id="watchUsage" data-i18n="manualScan">Manual scan</span>
+          <button class="secondary" id="scanAllBtn" type="button">Scan All</button>
+        </div>
+      </div>
+      <div class="opportunity-board" id="opportunityBoard">
+        <div><span>Visual Review</span><strong id="oppVisual">0</strong></div>
+        <div><span>Developing</span><strong id="oppDeveloping">0</strong></div>
+        <div><span>No Setup</span><strong id="oppNone">0</strong></div>
+        <div><span>Last batch</span><strong id="oppBatch">—</strong></div>
       </div>
       <div class="watch-add">
         <input id="watchTicker" placeholder="Add ticker (NVDA)" data-i18n-placeholder="addTicker" maxlength="12" autocomplete="off" />
@@ -196,7 +205,7 @@
       <div id="coreChecklist" class="checklist"></div>
     </section>
 
-    <section class="card">
+    <section class="card" id="strategySection">
       <div class="section-head">
         <div><p class="step" data-i18n="step2">STEP 2</p><h2 data-i18n="optionalStrategy">Optional Strategy Setup</h2></div>
         <span class="muted" data-i18n="notRequired">Not required</span>
@@ -243,14 +252,16 @@
         <div class="chain-status muted" id="chainStatus">Load a ticker to browse Schwab option contracts.</div>
         <div class="course-range-box" id="courseRangeBox" hidden>
           <div class="course-range-head">
-            <strong id="courseRangeTitle">Investep course range</strong>
+            <strong id="courseRangeTitle">Saved Investep course reference</strong>
             <span id="courseRangeStatus" class="range-status">—</span>
           </div>
           <div class="course-range-grid">
             <div><span>Optimal</span><strong id="courseOptimal">—</strong></div>
             <div><span>Min / Max</span><strong id="courseMinMax">—</strong></div>
             <div><span>Analysis date</span><strong id="courseAnalysisDate">—</strong></div>
+            <div><span>6-month review</span><strong id="courseReviewDate">—</strong></div>
             <div><span>Selected contract cost</span><strong id="courseSelectedCost">—</strong></div>
+            <div><span>Reference freshness</span><strong id="courseFreshness">—</strong></div>
           </div>
           <p class="course-range-note" id="courseRangeNote"></p>
         </div>
@@ -294,6 +305,6 @@
 
     <p class="disclaimer" data-i18n="disclaimer">PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.</p>
   </main>
-  <script src="/app.js?v=20260922-1408"></script>
+  <script src="/app.js?v=20260922-1555"></script>
 </body>
 </html>
