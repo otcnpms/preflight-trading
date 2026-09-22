@@ -661,11 +661,43 @@ function strategyWatch(data) {
 
   return results.sort((a,b) => (b.matched/b.known) - (a.matched/a.known) || b.matched-a.matched).slice(0,3);
 }
-let watchSymbols = JSON.parse(localStorage.getItem("preflightWatchlist") || "[]");
+const WATCHLIST_LIMIT = 12;
+const legacyWatchSymbols = JSON.parse(localStorage.getItem("preflightWatchlist") || "[]");
+let watchBoards = JSON.parse(localStorage.getItem("preflightWatchBoards") || "null");
+if (!Array.isArray(watchBoards) || !watchBoards.length) {
+  watchBoards = [{ id:"main", name:"Main", symbols:legacyWatchSymbols.slice(0, WATCHLIST_LIMIT) }];
+}
+let activeWatchBoardId = localStorage.getItem("preflightActiveWatchBoard") || watchBoards[0].id;
+if (!watchBoards.some(b => b.id === activeWatchBoardId)) activeWatchBoardId = watchBoards[0].id;
+let watchSymbols = (watchBoards.find(b => b.id === activeWatchBoardId)?.symbols || []).slice(0, WATCHLIST_LIMIT);
+let selectedWatchSymbol = localStorage.getItem("preflightSelectedWatchSymbol") || watchSymbols[0] || "";
 let watchResults = JSON.parse(localStorage.getItem("preflightWatchResults") || "{}");
 
+function syncActiveBoardSymbols() {
+  const board=watchBoards.find(b=>b.id===activeWatchBoardId);
+  if(board) board.symbols=[...watchSymbols].slice(0, WATCHLIST_LIMIT);
+}
 function saveWatchlist() {
+  syncActiveBoardSymbols();
   localStorage.setItem("preflightWatchlist", JSON.stringify(watchSymbols));
+  localStorage.setItem("preflightWatchBoards", JSON.stringify(watchBoards));
+  localStorage.setItem("preflightActiveWatchBoard", activeWatchBoardId);
+}
+function promoteCurrentWatchSymbol(symbol) {
+  if (!watchSymbols.includes(symbol) && watchSymbols.length >= WATCHLIST_LIMIT) return false;
+  watchSymbols=[symbol, ...watchSymbols.filter(x=>x!==symbol)].slice(0, WATCHLIST_LIMIT);
+  selectedWatchSymbol=symbol;
+  localStorage.setItem("preflightSelectedWatchSymbol", symbol);
+  saveWatchlist();
+  return true;
+}
+function renderWatchBoardControls() {
+  const select=document.getElementById("watchBoardSelect");
+  if(!select) return;
+  select.innerHTML=watchBoards.map(b=>'<option value="'+b.id+'">'+b.name+'</option>').join("");
+  select.value=activeWatchBoardId;
+  const cap=document.getElementById("watchCapacity");
+  if(cap) cap.textContent=watchSymbols.length+" / "+WATCHLIST_LIMIT;
 }
 function saveWatchResults() {
   localStorage.setItem("preflightWatchResults", JSON.stringify(watchResults));
