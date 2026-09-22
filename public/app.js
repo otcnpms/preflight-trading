@@ -447,6 +447,18 @@ const strategyDefinitions = {
       "Esperar una vela final de confirmación alcista.",
       "La confirmación debe observarse en Bollinger Bands de 1 Hora con alta volatilidad."
     ]
+  },
+  E12: {
+    title: "Cambio de tendencia lateral a la baja a mediano plazo",
+    meta: "Medias móviles 20 / 40 / 100 / 200 · canal lateral · Bollinger 1 hora",
+    direction: "Course-defined setup direction: bearish / put. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "Las medias móviles de 20, 40, 100 y 200 períodos deben mostrarse laterales o entrelazadas dentro de un canal lateral, con predominio de las medias de 100 y 200 períodos; el precio suele moverse entre las medias durante el canal.",
+      "El precio debe permanecer dentro de ese canal lateral durante 10 días o más; el material indica que puede extenderse por más de 30 días y debe respetar repetidamente los límites del canal.",
+      "Debe aparecer una señal bajista que saque al precio del canal, ya sea mediante un salto (gap), una vela bajista o una vela extremadamente bajista.",
+      "Esperar una vela final de confirmación bajista.",
+      "La confirmación debe observarse en Bollinger Bands de 1 Hora con alta volatilidad."
+    ]
   }
 };
 
