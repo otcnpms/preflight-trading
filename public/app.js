@@ -9,8 +9,21 @@ const coreItems = [
   { id: "spotStrike", title: "Spot / Strike / Expiration", detail: "Confirm spot price, strike relationship, and expiration." }
 ];
 
-const state = { checks: Object.fromEntries(coreItems.map(x => [x.id, null])) };
+const state = { checks: Object.fromEntries(coreItems.map(x => [x.id, null])), market: null };
 const list = document.getElementById("coreChecklist");
+
+function money(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? "$" + n.toFixed(2) : "—";
+}
+function num(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function fmtInt(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toLocaleString() : "—";
+}
 
 function renderChecklist() {
   list.innerHTML = "";
@@ -18,10 +31,7 @@ function renderChecklist() {
     const row = document.createElement("div");
     row.className = "check-row";
     row.innerHTML = `
-      <div>
-        <div class="check-title">${item.title}</div>
-        <div class="check-detail">${item.detail}</div>
-      </div>
+      <div><div class="check-title">${item.title}</div><div class="check-detail">${item.detail}</div></div>
       <div class="segmented" data-id="${item.id}">
         <button data-value="pass">PASS</button>
         <button data-value="fail">FAIL</button>
@@ -53,22 +63,88 @@ function updateStatus() {
   const badge = document.getElementById("overallStatus");
   badge.textContent = ready ? "METHODOLOGY COMPLETE" : hasFailure ? "REVIEW REQUIRED" : "NOT COMPLETE";
   badge.classList.toggle("ready", ready);
-
   document.getElementById("saveBtn").disabled = !allReviewed;
   document.getElementById("finalHeadline").textContent = ready ? "Core Pre-Flight complete" : hasFailure ? "Review failed checks" : "Pre-Flight incomplete";
   document.getElementById("finalCopy").textContent = ready
     ? "All core checks were reviewed with no failed requirement."
-    : hasFailure
-      ? "At least one core requirement is marked FAIL."
-      : "Review every core methodology item before saving.";
+    : hasFailure ? "At least one core requirement is marked FAIL." : "Review every core methodology item before saving.";
 }
 
 list.addEventListener("click", e => {
   const btn = e.target.closest("button[data-value]");
   if (!btn) return;
-  const group = btn.closest(".segmented");
-  state.checks[group.dataset.id] = btn.dataset.value;
+  state.checks[btn.closest(".segmented").dataset.id] = btn.dataset.value;
   syncButtons();
+});
+
+async function loadMarketData() {
+  const tickerEl = document.getElementById("ticker");
+  const symbol = tickerEl.value.trim().toUpperCase();
+  const msg = document.getElementById("marketMessage");
+  const button = document.getElementById("loadMarketBtn");
+  if (!symbol) {
+    msg.textContent = "Enter a ticker first.";
+    return;
+  }
+
+  tickerEl.value = symbol;
+  button.disabled = true;
+  button.textContent = "Loading…";
+  msg.textContent = `Loading ${symbol} market data…`;
+
+  try {
+    const resp = await fetch(`/api/market/${encodeURIComponent(symbol)}`);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || "Unable to load market data.");
+
+    state.market = data;
+    document.getElementById("marketCard").hidden = false;
+    document.getElementById("marketSymbol").textContent = data.symbol;
+    document.getElementById("marketName").textContent = data.name ? "· " + data.name : "";
+    document.getElementById("marketTimestamp").textContent = data.datetime || "Latest available";
+    document.getElementById("marketPrice").textContent = money(data.price);
+    document.getElementById("marketExchange").textContent = data.exchange || "—";
+    document.getElementById("marketVolume").textContent = fmtInt(data.volume);
+    document.getElementById("marketOpen").textContent = money(data.open);
+    document.getElementById("marketHigh").textContent = money(data.high);
+    document.getElementById("marketLow").textContent = money(data.low);
+    document.getElementById("marketPrevClose").textContent = money(data.previousClose);
+
+    const change = num(data.change);
+    const pct = num(data.percentChange);
+    const changeEl = document.getElementById("marketChange");
+    changeEl.textContent = change !== null && pct !== null ? `${change >= 0 ? "+" : ""}${change.toFixed(2)} (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%)` : "—";
+    changeEl.className = "market-change " + (change > 0 ? "positive" : change < 0 ? "negative" : "");
+
+    const gap = num(data.gapPct);
+    document.getElementById("marketGap").textContent = gap === null ? "—" : `${gap >= 0 ? "+" : ""}${gap.toFixed(2)}%`;
+
+    const ma = data.movingAverages || {};
+    document.getElementById("ma20").textContent = money(ma.ma20);
+    document.getElementById("ma40").textContent = money(ma.ma40);
+    document.getElementById("ma100").textContent = money(ma.ma100);
+    document.getElementById("ma200").textContent = money(ma.ma200);
+
+    const bb = data.bollingerDaily || {};
+    document.getElementById("bbUpper").textContent = money(bb.upper);
+    document.getElementById("bbMiddle").textContent = money(bb.middle);
+    document.getElementById("bbLower").textContent = money(bb.lower);
+
+    if (Number.isFinite(Number(data.price))) document.getElementById("spotPrice").value = Number(data.price).toFixed(2);
+    updateMetrics();
+    msg.textContent = `${symbol} loaded. Daily MAs and Bollinger values are calculated from the returned price history.`;
+  } catch (err) {
+    document.getElementById("marketCard").hidden = true;
+    msg.textContent = err.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Load Market Data";
+  }
+}
+
+document.getElementById("loadMarketBtn").addEventListener("click", loadMarketData);
+document.getElementById("ticker").addEventListener("keydown", e => {
+  if (e.key === "Enter") loadMarketData();
 });
 
 const strategyPresent = document.getElementById("strategyPresent");
@@ -85,15 +161,10 @@ function number(id) {
 }
 
 function updateMetrics() {
-  const bid = number("bid");
-  const ask = number("ask");
-  const spot = number("spotPrice");
-  const strike = number("strikePrice");
-
+  const bid = number("bid"), ask = number("ask"), spot = number("spotPrice"), strike = number("strikePrice");
   document.getElementById("spread").textContent = bid !== null && ask !== null ? (ask - bid).toFixed(2) : "—";
   document.getElementById("strikeDistance").textContent = spot !== null && strike !== null ? (strike - spot).toFixed(2) : "—";
 }
-
 ["bid","ask","spotPrice","strikePrice"].forEach(id => document.getElementById(id).addEventListener("input", updateMetrics));
 
 document.getElementById("tradeDate").valueAsDate = new Date();
@@ -101,11 +172,12 @@ document.getElementById("tradeDate").valueAsDate = new Date();
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (!confirm("Reset this Pre-Flight?")) return;
   Object.keys(state.checks).forEach(k => state.checks[k] = null);
-  document.querySelectorAll("input,textarea").forEach(el => {
-    if (el.id !== "tradeDate") el.value = "";
-  });
+  state.market = null;
+  document.querySelectorAll("input,textarea").forEach(el => { if (el.id !== "tradeDate") el.value = ""; });
   document.querySelectorAll("select").forEach(el => el.selectedIndex = 0);
   strategy.disabled = true;
+  document.getElementById("marketCard").hidden = true;
+  document.getElementById("marketMessage").textContent = "Enter a ticker and load market data.";
   updateMetrics();
   syncButtons();
 });
@@ -116,6 +188,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     ticker: document.getElementById("ticker").value.trim().toUpperCase(),
     tradeDate: document.getElementById("tradeDate").value,
     priceRange: document.getElementById("priceRange").value,
+    marketSnapshot: state.market,
     checks: state.checks,
     strategy: strategyPresent.value === "yes" ? strategy.value : null,
     strategyNotes: document.getElementById("strategyNotes").value,
@@ -136,7 +209,6 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     },
     tradeNotes: document.getElementById("tradeNotes").value
   };
-
   const history = JSON.parse(localStorage.getItem("preflightHistory") || "[]");
   history.unshift(record);
   localStorage.setItem("preflightHistory", JSON.stringify(history.slice(0, 100)));
