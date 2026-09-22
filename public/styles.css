@@ -179,3 +179,5 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 .lang-btn{border:0;background:transparent;color:var(--muted);padding:8px 10px;font-weight:850;cursor:pointer;font-size:11px}
 .lang-btn.active{background:var(--gold);color:#171004}
 @media(max-width:760px){.topbar-actions{width:100%;justify-content:space-between}}
+
+.watch-saved{display:block;color:var(--gold);font-size:8px;line-height:1.3;margin-top:2px;font-weight:750;letter-spacing:.03em}
