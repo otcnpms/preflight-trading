@@ -193,3 +193,5 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 .schwab-test-result.success{color:var(--good);border-color:#2d7a58}
 .schwab-test-result.error{color:var(--bad);border-color:#814545}
 @media(max-width:760px){.schwab-connect-row{flex-direction:column;align-items:flex-start}.schwab-actions{width:100%;justify-content:flex-start}.schwab-actions a,.schwab-actions button{flex:1;justify-content:center}}
+
+.schwab-actions [hidden], .schwab-test-result[hidden]{display:none !important}
