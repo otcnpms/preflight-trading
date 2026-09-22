@@ -117,3 +117,8 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 .strategy-check small { display:block; color:var(--muted); font-size:11px; line-height:1.4; font-weight:500; }
 .strategy-note { margin:10px 0 0; color:var(--muted); font-size:11px; line-height:1.4; }
 @media (max-width:760px) { .strategy-module-head { flex-direction:column; } }
+
+.option-summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:14px; }
+.option-summary-grid .metric { min-height:64px; align-items:center; }
+@media (max-width:900px) { .option-summary-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:560px) { .option-summary-grid { grid-template-columns:1fr; } }
