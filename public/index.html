@@ -19,19 +19,63 @@
     </header>
 
     <section class="card setup">
-      <div class="grid three">
+      <div class="grid ticker-grid">
         <label>Ticker<input id="ticker" placeholder="SPY" autocomplete="off" /></label>
         <label>Date<input id="tradeDate" type="date" /></label>
         <label>Price Range<input id="priceRange" placeholder="Optional" /></label>
+        <div class="load-wrap"><button class="primary" id="loadMarketBtn">Load Market Data</button></div>
+      </div>
+      <p class="market-message muted" id="marketMessage">Enter a ticker and load market data.</p>
+    </section>
+
+    <section class="card market-card" id="marketCard" hidden>
+      <div class="section-head">
+        <div>
+          <p class="step">LIVE / MARKET DATA</p>
+          <h2><span id="marketSymbol">—</span> <span class="muted" id="marketName"></span></h2>
+        </div>
+        <span class="counter" id="marketTimestamp">—</span>
+      </div>
+
+      <div class="market-hero">
+        <div>
+          <span class="market-label">Latest price</span>
+          <strong class="market-price" id="marketPrice">—</strong>
+          <span id="marketChange" class="market-change">—</span>
+        </div>
+        <div class="metric compact"><span>Exchange</span><strong id="marketExchange">—</strong></div>
+        <div class="metric compact"><span>Gap vs prev close</span><strong id="marketGap">—</strong></div>
+        <div class="metric compact"><span>Volume</span><strong id="marketVolume">—</strong></div>
+      </div>
+
+      <div class="market-grid">
+        <div class="data-group">
+          <h3>Session</h3>
+          <div class="data-line"><span>Open</span><strong id="marketOpen">—</strong></div>
+          <div class="data-line"><span>High</span><strong id="marketHigh">—</strong></div>
+          <div class="data-line"><span>Low</span><strong id="marketLow">—</strong></div>
+          <div class="data-line"><span>Previous close</span><strong id="marketPrevClose">—</strong></div>
+        </div>
+        <div class="data-group">
+          <h3>Daily moving averages</h3>
+          <div class="data-line"><span>MA 20</span><strong id="ma20">—</strong></div>
+          <div class="data-line"><span>MA 40</span><strong id="ma40">—</strong></div>
+          <div class="data-line"><span>MA 100</span><strong id="ma100">—</strong></div>
+          <div class="data-line"><span>MA 200</span><strong id="ma200">—</strong></div>
+        </div>
+        <div class="data-group">
+          <h3>Daily Bollinger 20 / 2</h3>
+          <div class="data-line"><span>Upper</span><strong id="bbUpper">—</strong></div>
+          <div class="data-line"><span>Midpoint</span><strong id="bbMiddle">—</strong></div>
+          <div class="data-line"><span>Lower</span><strong id="bbLower">—</strong></div>
+          <div class="data-line"><span>Source</span><strong>Twelve Data</strong></div>
+        </div>
       </div>
     </section>
 
     <section class="card">
       <div class="section-head">
-        <div>
-          <p class="step">STEP 1</p>
-          <h2>Core Pre-Flight</h2>
-        </div>
+        <div><p class="step">STEP 1</p><h2>Core Pre-Flight</h2></div>
         <span class="counter" id="coreCounter">0 / 8 complete</span>
       </div>
       <div id="coreChecklist" class="checklist"></div>
@@ -39,18 +83,12 @@
 
     <section class="card">
       <div class="section-head">
-        <div>
-          <p class="step">STEP 2</p>
-          <h2>Optional Strategy Setup</h2>
-        </div>
+        <div><p class="step">STEP 2</p><h2>Optional Strategy Setup</h2></div>
         <span class="muted">Not required</span>
       </div>
       <div class="grid two">
         <label>Recognized setup?
-          <select id="strategyPresent">
-            <option value="no">No / Not identified</option>
-            <option value="yes">Yes</option>
-          </select>
+          <select id="strategyPresent"><option value="no">No / Not identified</option><option value="yes">Yes</option></select>
         </label>
         <label>Strategy
           <select id="strategy" disabled>
@@ -65,9 +103,7 @@
     </section>
 
     <section class="card">
-      <div class="section-head">
-        <div><p class="step">STEP 3</p><h2>Option Details</h2></div>
-      </div>
+      <div class="section-head"><div><p class="step">STEP 3</p><h2>Option Details</h2></div></div>
       <div class="grid four">
         <label>Type<select id="optionType"><option value="">—</option><option>CALL</option><option>PUT</option></select></label>
         <label>Expiration<input id="expiration" type="date" /></label>
@@ -85,9 +121,7 @@
     </section>
 
     <section class="card">
-      <div class="section-head">
-        <div><p class="step">STEP 4</p><h2>Position Plan</h2></div>
-      </div>
+      <div class="section-head"><div><p class="step">STEP 4</p><h2>Position Plan</h2></div></div>
       <div class="grid three">
         <label>Plan<select id="plan"><option value="">Select</option><option>10%</option><option>35%</option><option>100%</option><option>Other</option></select></label>
         <label>Target / Profit $<input id="targetDollar" type="number" step="0.01" /></label>
@@ -97,15 +131,8 @@
     </section>
 
     <section class="card final-review">
-      <div>
-        <p class="step">FINAL REVIEW</p>
-        <h2 id="finalHeadline">Pre-Flight incomplete</h2>
-        <p id="finalCopy">Complete all required core methodology checks.</p>
-      </div>
-      <div class="actions">
-        <button class="secondary" id="resetBtn">Reset</button>
-        <button class="primary" id="saveBtn" disabled>Save Pre-Flight</button>
-      </div>
+      <div><p class="step">FINAL REVIEW</p><h2 id="finalHeadline">Pre-Flight incomplete</h2><p id="finalCopy">Complete all required core methodology checks.</p></div>
+      <div class="actions"><button class="secondary" id="resetBtn">Reset</button><button class="primary" id="saveBtn" disabled>Save Pre-Flight</button></div>
     </section>
 
     <p class="disclaimer">PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.</p>
