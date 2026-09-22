@@ -42,6 +42,7 @@ function applyLanguage() {
   const scanAllBtn=document.getElementById("scanAllBtn"); if(scanAllBtn && !scanAllBtn.disabled) scanAllBtn.textContent=t("scanAll");
   renderWatchlist();
   renderChecklist();
+  if (typeof strategy !== "undefined" && strategy?.value) renderStrategyModule(strategy.value);
   updateStatus();
 }
 document.addEventListener("click", e => {
@@ -466,6 +467,42 @@ const strategyWatchNames = {
   E12:{en:"Medium-term sideways breakout downward",es:"Lateral a la baja · mediano plazo"}
 };
 function swName(code,fallback){ return strategyWatchNames[code]?.[currentLang] || fallback; }
+const strategyEvidenceEs = {
+  "Gap up present (one allowed break mechanism)":"Gap al alza presente (uno de los mecanismos permitidos de ruptura)",
+  "1H price crossed above MA20":"Precio de 1H cruzó por encima de MA20",
+  "Current 1H candle bullish":"Vela actual de 1H alcista",
+  "15m close above MA20 and MA40":"Cierre de 15m por encima de MA20 y MA40",
+  "Gap down present (one allowed break mechanism)":"Gap a la baja presente (uno de los mecanismos permitidos de ruptura)",
+  "1H price crossed below MA20":"Precio de 1H cruzó por debajo de MA20",
+  "Current 1H candle bearish":"Vela actual de 1H bajista",
+  "15m close below MA20 and MA40":"Cierre de 15m por debajo de MA20 y MA40",
+  "Daily structure bearish":"Estructura diaria bajista",
+  "1H structure bullish":"Estructura de 1H alcista",
+  "Daily price within 0.5% of Bollinger midpoint":"Precio diario dentro de 0.5% del punto medio de Bollinger",
+  "Midpoint appears respected as resistance (provisional 0.5% tolerance)":"El punto medio parece respetado como resistencia (tolerancia provisional 0.5%)",
+  "Daily structure bullish":"Estructura diaria alcista",
+  "1H structure bearish":"Estructura de 1H bajista",
+  "Midpoint appears respected as support (provisional 0.5% tolerance)":"El punto medio parece respetado como soporte (tolerancia provisional 0.5%)",
+  "Gap up ≥ 0.5%":"Gap al alza ≥ 0.5%",
+  "15m price above upper Bollinger band":"Precio de 15m por encima de la banda superior de Bollinger",
+  "Current 15m candle moving down":"Vela actual de 15m moviéndose a la baja",
+  "Gap down ≤ -0.5%":"Gap a la baja ≤ -0.5%",
+  "15m price below lower Bollinger band":"Precio de 15m por debajo de la banda inferior de Bollinger",
+  "Current 15m candle moving up":"Vela actual de 15m moviéndose al alza",
+  "1H MA20 and MA40 sloping down":"MA20 y MA40 de 1H inclinadas a la baja",
+  "Gap down present":"Gap a la baja presente",
+  "1H price at least 1% from MA20 (provisional)":"Precio de 1H al menos 1% alejado de MA20 (provisional)",
+  "1H MA20 and MA40 sloping up":"MA20 y MA40 de 1H inclinadas al alza",
+  "Gap up present":"Gap al alza presente",
+  "15m price crossed above Bollinger midpoint":"Precio de 15m cruzó por encima del punto medio de Bollinger",
+  "15m Bollinger width expanding":"Ancho de Bollinger de 15m expandiéndose",
+  "15m price crossed below Bollinger midpoint":"Precio de 15m cruzó por debajo del punto medio de Bollinger",
+  "Daily MA20/40/100/200 compressed within 3% (provisional)":"MA20/40/100/200 diarias comprimidas dentro de 3% (provisional)",
+  "Current Daily candle/gap bullish":"Vela/gap diario actual alcista",
+  "1H Bollinger width ≥ 2% (provisional)":"Ancho de Bollinger de 1H ≥ 2% (provisional)",
+  "Current Daily candle/gap bearish":"Vela/gap diario actual bajista"
+};
+function swEvidence(text){ return currentLang==="es" ? (strategyEvidenceEs[text] || text) : text; }
 
 function strategyWatch(data) {
   const tf15 = data.timeframes?.min15 || {};
@@ -1213,9 +1250,12 @@ function renderStrategyModule(code) {
 
   module.hidden = false;
   document.getElementById("strategyCode").textContent = code;
-  document.getElementById("strategyTitle").textContent = def.title;
+  document.getElementById("strategyTitle").textContent = currentLang==="es" ? def.title : (strategyWatchNames[code]?.en || def.title);
   document.getElementById("strategyMeta").textContent = def.meta;
-  document.getElementById("strategyCourseDirection").textContent = def.direction;
+  document.getElementById("strategyCourseDirection").textContent = currentLang==="es"
+    ? def.direction.replace("Course-defined setup direction: bullish / call. PreFlight records the course methodology; it does not recommend a trade.","Dirección definida por el curso: alcista / CALL. PreFlight registra la metodología del curso; no recomienda una operación.")
+      .replace("Course-defined setup direction: bearish / put. PreFlight records the course methodology; it does not recommend a trade.","Dirección definida por el curso: bajista / PUT. PreFlight registra la metodología del curso; no recomienda una operación.")
+    : def.direction;
 
   if (!strategyConfirmations[code]) {
     strategyConfirmations[code] = Array(def.requirements.length).fill(false);
@@ -1234,7 +1274,7 @@ function renderStrategyModule(code) {
     row.innerHTML = `
       <input type="checkbox" data-strategy="${code}" data-index="${index}" ${strategyConfirmations[code][index] ? "checked" : ""}>
       <span>
-        <strong>Requirement ${index + 1} <em class="req-mode visual">VISUAL CONFIRM</em>${evidence ? ` <em class="req-mode auto">AUTO DATA</em>` : ""}</strong>
+        <strong>${currentLang==="es" ? "Requisito" : "Requirement"} ${index + 1} <em class="req-mode visual">${currentLang==="es" ? "CONFIRMACIÓN VISUAL" : "VISUAL CONFIRM"}</em>${evidence ? ` <em class="req-mode auto">${currentLang==="es" ? "DATOS AUTO" : "AUTO DATA"}</em>` : ""}</strong>
         <small>${text}</small>
         ${evidence ? `<small class="strategy-evidence ${evidence.status}">${evidence.text}</small>` : ""}
       </span>
@@ -1254,7 +1294,7 @@ function updateStrategyProgress(code, autoFactsOverride) {
     ? autoFactsOverride
     : def.requirements.filter((_, index) => Boolean(strategyAutoEvidence(code, index))).length;
   document.getElementById("strategyProgress").textContent =
-    `${complete}/${def.requirements.length} visual · ${autoFacts} auto facts`;
+    `${complete}/${def.requirements.length} visual · ${autoFacts} ${currentLang==="es" ? "datos auto" : "auto facts"}`;
 }
 
 document.getElementById("strategyRequirements").addEventListener("change", e => {
