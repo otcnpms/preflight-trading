@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#07111f" />
   <title>PreFlight Trading</title>
-  <link rel="stylesheet" href="/styles.css?v=20260922-1705" />
+  <link rel="stylesheet" href="/styles.css?v=20260922-1948" />
 </head>
 <body>
   <main class="shell">
@@ -70,11 +70,29 @@
         <div><span>No Setup</span><strong id="oppNone">0</strong></div>
         <div><span>Last batch</span><strong id="oppBatch">—</strong></div>
       </div>
+      <div class="watch-board-bar">
+        <div class="watch-board-select-wrap">
+          <span class="watch-board-label" data-i18n="watchBoard">Watchlist</span>
+          <select id="watchBoardSelect"></select>
+          <span class="watch-capacity" id="watchCapacity">0 / 12</span>
+        </div>
+        <button class="secondary" id="newWatchBoardBtn" type="button" data-i18n="newWatchlist">New Watchlist</button>
+      </div>
       <div class="watch-add">
         <input id="watchTicker" placeholder="Add ticker (NVDA)" data-i18n-placeholder="addTicker" maxlength="12" autocomplete="off" />
         <button class="secondary" id="addWatchBtn" type="button" data-i18n="add">Add</button>
       </div>
-      <div id="watchList" class="watch-list"></div>
+      <div id="watchWorkspace" class="watch-workspace">
+        <div class="watch-list-pane">
+          <div id="watchList" class="watch-list"></div>
+        </div>
+        <div id="watchDetail" class="watch-detail-pane">
+          <div class="watch-detail-empty">
+            <strong data-i18n="selectWatchStock">Select a stock</strong>
+            <span data-i18n="selectWatchStockHint">Choose a ticker on the left to see its strategies and scan details.</span>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="card market-card" id="marketCard" hidden>
@@ -333,6 +351,6 @@
 
     <p class="disclaimer" data-i18n="disclaimer">PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.</p>
   </main>
-  <script src="/app.js?v=20260922-1705"></script>
+  <script src="/app.js?v=20260922-1948"></script>
 </body>
 </html>
