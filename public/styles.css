@@ -195,3 +195,7 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 @media(max-width:760px){.schwab-connect-row{flex-direction:column;align-items:flex-start}.schwab-actions{width:100%;justify-content:flex-start}.schwab-actions a,.schwab-actions button{flex:1;justify-content:center}}
 
 .schwab-actions [hidden], .schwab-test-result[hidden]{display:none !important}
+
+.option-chain-picker{margin-bottom:14px;padding:14px;border:1px solid #2d7a58;background:#0b1a19;border-radius:13px}
+.option-chain-picker[hidden]{display:none!important}
+.chain-status{margin-top:10px;font-size:11px}
