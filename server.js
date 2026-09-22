@@ -50,36 +50,80 @@ app.get("/api/market/:symbol", async (req, res) => {
     quoteUrl.searchParams.set("symbol", symbol);
     quoteUrl.searchParams.set("apikey", apiKey);
 
-    const dailyUrl = new URL("https://api.twelvedata.com/time_series");
-    dailyUrl.searchParams.set("symbol", symbol);
-    dailyUrl.searchParams.set("interval", "1day");
-    dailyUrl.searchParams.set("outputsize", "220");
-    dailyUrl.searchParams.set("apikey", apiKey);
+    function seriesUrl(interval) {
+      const url = new URL("https://api.twelvedata.com/time_series");
+      url.searchParams.set("symbol", symbol);
+      url.searchParams.set("interval", interval);
+      url.searchParams.set("outputsize", "220");
+      url.searchParams.set("apikey", apiKey);
+      return url;
+    }
 
-    const [quoteResp, dailyResp] = await Promise.all([fetch(quoteUrl), fetch(dailyUrl)]);
-    const [quote, daily] = await Promise.all([quoteResp.json(), dailyResp.json()]);
+    const [quoteResp, dailyResp, hourResp, min15Resp] = await Promise.all([
+      fetch(quoteUrl),
+      fetch(seriesUrl("1day")),
+      fetch(seriesUrl("1h")),
+      fetch(seriesUrl("15min"))
+    ]);
+    const [quote, daily, hour, min15] = await Promise.all([
+      quoteResp.json(),
+      dailyResp.json(),
+      hourResp.json(),
+      min15Resp.json()
+    ]);
 
     if (!quoteResp.ok || quote.status === "error") {
       throw new Error(quote.message || "Quote request failed.");
     }
-    if (!dailyResp.ok || daily.status === "error" || !Array.isArray(daily.values)) {
-      throw new Error(daily.message || "Daily history request failed.");
+
+    function parseSeries(resp, payload, label) {
+      if (!resp.ok || payload.status === "error" || !Array.isArray(payload.values)) {
+        return { error: payload.message || label + " history unavailable.", rows: [] };
+      }
+      const rows = [...payload.values]
+        .map(v => ({
+          datetime: v.datetime,
+          open: Number(v.open),
+          high: Number(v.high),
+          low: Number(v.low),
+          close: Number(v.close),
+          volume: Number(v.volume)
+        }))
+        .filter(v => Number.isFinite(v.close))
+        .sort((a, b) => a.datetime.localeCompare(b.datetime));
+      return { error: null, rows };
     }
 
-    const rows = [...daily.values]
-      .map(v => ({
-        datetime: v.datetime,
-        open: Number(v.open),
-        high: Number(v.high),
-        low: Number(v.low),
-        close: Number(v.close),
-        volume: Number(v.volume)
-      }))
-      .filter(v => Number.isFinite(v.close))
-      .sort((a, b) => a.datetime.localeCompare(b.datetime));
+    function summarize(parsed) {
+      const closes = parsed.rows.map(v => v.close);
+      return {
+        available: parsed.rows.length > 0,
+        error: parsed.error,
+        latest: parsed.rows.at(-1) || null,
+        movingAverages: {
+          ma20: sma(closes, 20),
+          ma40: sma(closes, 40),
+          ma100: sma(closes, 100),
+          ma200: sma(closes, 200)
+        },
+        bollinger: bollinger(closes, 20, 2)
+      };
+    }
 
+    const dailyParsed = parseSeries(dailyResp, daily, "Daily");
+    if (!dailyParsed.rows.length) {
+      throw new Error(dailyParsed.error || "Daily history request failed.");
+    }
+    const hourParsed = parseSeries(hourResp, hour, "1H");
+    const min15Parsed = parseSeries(min15Resp, min15, "15m");
+
+    const dailySummary = summarize(dailyParsed);
+    const hourSummary = summarize(hourParsed);
+    const min15Summary = summarize(min15Parsed);
+
+    const rows = dailyParsed.rows;
     const closes = rows.map(v => v.close);
-    const bb = bollinger(closes, 20, 2);
+    const bb = dailySummary.bollinger;
     const previousClose = Number(quote.previous_close);
     const open = Number(quote.open);
     const gapPct = Number.isFinite(previousClose) && previousClose !== 0 && Number.isFinite(open)
@@ -101,14 +145,14 @@ app.get("/api/market/:symbol", async (req, res) => {
       percentChange: Number(quote.percent_change),
       volume: Number(quote.volume),
       gapPct,
-      movingAverages: {
-        ma20: sma(closes, 20),
-        ma40: sma(closes, 40),
-        ma100: sma(closes, 100),
-        ma200: sma(closes, 200)
-      },
+      movingAverages: dailySummary.movingAverages,
       bollingerDaily: bb,
-      latestDailyBar: rows.at(-1) || null,
+      latestDailyBar: dailySummary.latest,
+      timeframes: {
+        min15: min15Summary,
+        hour1: hourSummary,
+        daily: dailySummary
+      },
       source: "Twelve Data",
       cached: false
     };
