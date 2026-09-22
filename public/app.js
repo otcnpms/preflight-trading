@@ -241,7 +241,27 @@ async function loadMarketData() {
     return;
   }
 
+  const previousActiveSymbol = state.market?.symbol ? String(state.market.symbol).toUpperCase() : "";
   tickerEl.value = symbol;
+
+  if (previousActiveSymbol && previousActiveSymbol !== symbol) {
+    schwabOptionChain = null;
+    const picker=document.getElementById("optionChainPicker");
+    if (picker) picker.hidden = true;
+    const chainStatus=document.getElementById("chainStatus");
+    if (chainStatus) chainStatus.textContent = currentLang === "es"
+      ? `Ticker cambiado a ${symbol}. Carga las opciones Schwab para este ticker.`
+      : `Ticker changed to ${symbol}. Load Schwab options for this ticker.`;
+    ["expiration","strikePrice","bid","ask","entryPrice"].forEach(id => {
+      const el=document.getElementById(id); if(el) el.value="";
+    });
+    const optionType=document.getElementById("optionType"); if(optionType) optionType.value="";
+    const chainExpiration=document.getElementById("chainExpiration"); if(chainExpiration) chainExpiration.innerHTML='<option value="">Select expiration</option>';
+    const chainType=document.getElementById("chainType"); if(chainType) chainType.value="";
+    const chainStrike=document.getElementById("chainStrike"); if(chainStrike) chainStrike.innerHTML='<option value="">Select strike</option>';
+    const rangeBox=document.getElementById("courseRangeBox"); if(rangeBox) rangeBox.hidden=true;
+  }
+
   button.disabled = true;
   button.textContent = "Loading…";
   msg.textContent = `Loading ${symbol} market data…`;
@@ -663,6 +683,9 @@ function renderWatchlist() {
     const result = watchResults[symbol];
     const row = document.createElement("div");
     row.className = "watch-row";
+    row.dataset.symbol = symbol;
+    row.setAttribute("role", "button");
+    row.setAttribute("tabindex", "0");
     const eventHtml = !result
       ? '<span class="watch-state">' + t("notChecked") + '</span>'
       : result.loading
@@ -796,7 +819,30 @@ document.getElementById("watchList").addEventListener("click", async e => {
     saveWatchlist();
     saveWatchResults();
     renderWatchlist();
+    return;
   }
+
+  // Clicking a Watchlist card selects that symbol as the active PreFlight ticker.
+  // Ignore clicks used to expand strategy details or operate row controls.
+  if (e.target.closest("button, summary, details, select, input, textarea, a")) return;
+  const row = e.target.closest(".watch-row[data-symbol]");
+  if (row) {
+    const symbol = row.dataset.symbol;
+    document.getElementById("ticker").value = symbol;
+    await loadMarketData();
+    document.getElementById("ticker").scrollIntoView({behavior:"smooth",block:"center"});
+  }
+});
+
+document.getElementById("watchList").addEventListener("keydown", async e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  if (e.target.closest("button, summary, details, select, input, textarea, a")) return;
+  const row=e.target.closest(".watch-row[data-symbol]");
+  if(!row) return;
+  e.preventDefault();
+  document.getElementById("ticker").value=row.dataset.symbol;
+  await loadMarketData();
+  document.getElementById("ticker").scrollIntoView({behavior:"smooth",block:"center"});
 });
 
 Object.keys(watchResults).forEach(symbol => {
