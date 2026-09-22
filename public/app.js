@@ -8,7 +8,7 @@ const i18n = {
     marketCalendar:"MARKET CALENDAR", macroEventChecks:"Macro / Event Checks", noExtraApi:"No extra API credits", federalReserve:"Federal Reserve", nextFomc:"Next FOMC meeting", daysAway:"Days away", tradeDateStatus:"Trade date status", earnings:"Earnings", upcomingEarnings:"Upcoming earnings", automation:"Automation",
     step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
     disclaimer:"PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.",
-    notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"${t("courseRemaining")}",
+    notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"course condition(s) still require visual/calibrated review.",
     gapUp:"Gap up", gapDown:"Gap down", priceCrossAboveMA20:"Price crossed above MA20", priceCrossBelowMA20:"Price crossed below MA20", ma20CrossAbove40:"MA20 crossed above MA40", ma20CrossBelow40:"MA20 crossed below MA40", priceCrossAboveMid:"Price crossed above Bollinger midpoint", priceCrossBelowMid:"Price crossed below Bollinger midpoint", nearMid:"Price within 0.5% of Bollinger midpoint"
   },
   es: {
@@ -587,7 +587,7 @@ function renderWatchlist() {
   const wrap = document.getElementById("watchList");
   wrap.innerHTML = "";
   if (!watchSymbols.length) {
-    wrap.innerHTML = '<p class="muted watch-empty">Add a ticker to start watching for crosses, midpoint events and gaps.</p>';
+    wrap.innerHTML = '<p class="muted watch-empty">' + (currentLang === "es" ? "Agrega un ticker para monitorear cruces, eventos del punto medio y gaps." : "Add a ticker to start watching for crosses, midpoint events and gaps.") + '</p>';
     return;
   }
   watchSymbols.forEach(symbol => {
@@ -622,7 +622,7 @@ function renderWatchlist() {
                 <div class="strategy-watch-detail">
                   <div class="strategy-watch-title">${s.label}</div>
                   ${s.details.map(d => `<div class="strategy-watch-line ${d.match ? "hit" : "miss"}">${d.match ? "✓" : "○"} ${d.text}${d.assisted ? ' <em>' + t("autoAssisted") + '</em>' : ''}</div>`).join("")}
-                  <div class="strategy-watch-visual">${s.visualRemaining} course condition(s) still require visual/calibrated review.</div>
+                  <div class="strategy-watch-visual">${s.visualRemaining} ${t("courseRemaining")}</div>
                 </div>
               </details>
             `).join("")}
