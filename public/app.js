@@ -354,6 +354,25 @@ async function loadMarketData() {
     updateMetrics();
     renderChecklist();
     if (strategy.value) renderStrategyModule(strategy.value);
+
+    // Keep the top ticker and Watchlist as one workflow:
+    // Get Data promotes the ticker to the first row and reuses this same
+    // market payload for the E1-E12 scan, avoiding a second provider request.
+    const previousWatch = watchResults[symbol] || null;
+    const watchStrategies = strategyWatch(data);
+    watchSymbols = [symbol, ...watchSymbols.filter(x => x !== symbol)].slice(0, 20);
+    watchResults[symbol] = {
+      loading: false,
+      price: Number(data.price),
+      events: detectWatchEvents(data),
+      checkedAt: new Date().toISOString(),
+      strategies: watchStrategies,
+      transition: deriveTransition(previousWatch, watchStrategies)
+    };
+    saveWatchlist();
+    saveWatchResults();
+    renderWatchlist();
+
     msg.textContent = `${symbol} loaded. 15m, 1H and Daily context calculated from returned price history.`;
   } catch (err) {
     document.getElementById("marketCard").hidden = true;
