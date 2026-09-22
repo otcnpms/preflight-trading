@@ -226,3 +226,8 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 .watch-transition.no-longer-active{color:var(--bad);border-color:#814545}
 .strategy-handoff{margin-top:10px;font-size:9px;padding:6px 9px}
 @media(max-width:760px){.opportunity-board{grid-template-columns:repeat(2,1fr)}}
+
+.strategy-watch-item summary{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:8px}
+.strategy-quick-open{border:1px solid #36526f;background:#0d1b2d;color:#dce9f8;border-radius:7px;padding:4px 7px;font-size:8px;font-weight:900;letter-spacing:.04em;cursor:pointer}
+.strategy-quick-open:hover{border-color:#6f8fb0}
+@media(max-width:760px){.strategy-watch-item summary{grid-template-columns:auto 1fr auto}.strategy-quick-open{grid-column:3}}
