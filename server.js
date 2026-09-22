@@ -8,7 +8,15 @@ const marketCache = new Map();
 const CACHE_MS = 60_000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), {
+  etag: true,
+  setHeaders(res, filePath) {
+    if (/\.(?:html|js|css)$/.test(filePath)) {
+      res.setHeader("Cache-Control", "no-store, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+    }
+  }
+}));
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "preflight-trading" });
