@@ -6,7 +6,7 @@ const i18n = {
     liveMarketData:"LIVE / MARKET DATA", latestPrice:"Latest price", exchange:"Exchange", gapVsPrevClose:"Gap vs prev close", volume:"Volume", session:"Session", open:"Open", high:"High", low:"Low", previousClose:"Previous close",
     dailyMovingAverages:"Daily moving averages", dailyBollinger:"Daily Bollinger 20 / 2", upper:"Upper", midpoint:"Midpoint", lower:"Lower", source:"Source",
     marketCalendar:"MARKET CALENDAR", macroEventChecks:"Macro / Event Checks", noExtraApi:"No extra API credits", federalReserve:"Federal Reserve", nextFomc:"Next FOMC meeting", daysAway:"Days away", tradeDateStatus:"Trade date status", earnings:"Earnings", upcomingEarnings:"Upcoming earnings", automation:"Automation",
-    step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", loadSchwabOptions:"Load Schwab Options", courseRangeTitle:"Investep course range", rangeOptimal:"OPTIMAL", rangeWithin:"WITHIN LIMITS", rangeOutside:"OUTSIDE RANGE", rangeDue:"REFERENCE REVIEW DUE", rangeSoon:"REFERENCE REVIEW SOON", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
+    step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", loadSchwabOptions:"Load Schwab Options", courseRangeTitle:"Saved Investep course reference", rangeOptimal:"INSIDE SAVED OPTIMAL", rangeWithin:"INSIDE SAVED LIMITS", rangeOutside:"OUTSIDE SAVED REFERENCE", scanAll:"Scan All", scanningAll:"Scanning…", handoff:"Open Full PreFlight", newSetup:"NEW", stillActive:"STILL ACTIVE", noLongerActive:"NO LONGER ACTIVE", noSetup:"NO SETUP", currentRef:"CURRENT", rangeDue:"REFERENCE REVIEW DUE", rangeSoon:"REFERENCE REVIEW SOON", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
     disclaimer:"PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.",
     notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"course condition(s) still require visual/calibrated review.", lastScan:"Last scan", savedSnapshot:"SAVED SNAPSHOT", rescan:"Rescan", schwabTitle:"Broker Data Connection", schwabCopy:"Connect your Schwab account to test quotes and options-chain access.", schwabConnect:"Connect Schwab", schwabConnected:"CONNECTED", schwabNotConnected:"NOT CONNECTED", schwabConfigured:"Ready to connect", schwabTest:"Test SPY Quote", schwabOptionsTest:"Test SPY Options", schwabDisconnect:"Disconnect", schwabRealtime:"Real-time", schwabDelayed:"Realtime flag unavailable",
     gapUp:"Gap up", gapDown:"Gap down", priceCrossAboveMA20:"Price crossed above MA20", priceCrossBelowMA20:"Price crossed below MA20", ma20CrossAbove40:"MA20 crossed above MA40", ma20CrossBelow40:"MA20 crossed below MA40", priceCrossAboveMid:"Price crossed above Bollinger midpoint", priceCrossBelowMid:"Price crossed below Bollinger midpoint", nearMid:"Price within 0.5% of Bollinger midpoint"
@@ -18,7 +18,7 @@ const i18n = {
     liveMarketData:"DATOS DE MERCADO / EN VIVO", latestPrice:"Último precio", exchange:"Bolsa", gapVsPrevClose:"Gap vs cierre previo", volume:"Volumen", session:"Sesión", open:"Apertura", high:"Máximo", low:"Mínimo", previousClose:"Cierre previo",
     dailyMovingAverages:"Medias móviles diarias", dailyBollinger:"Bollinger diario 20 / 2", upper:"Superior", midpoint:"Punto medio", lower:"Inferior", source:"Fuente",
     marketCalendar:"CALENDARIO DE MERCADO", macroEventChecks:"Revisión Macro / Eventos", noExtraApi:"Sin créditos API adicionales", federalReserve:"Reserva Federal", nextFomc:"Próxima reunión FOMC", daysAway:"Días restantes", tradeDateStatus:"Estado de la fecha", earnings:"Earnings", upcomingEarnings:"Próximos earnings", automation:"Automatización",
-    step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", loadSchwabOptions:"Cargar Opciones Schwab", courseRangeTitle:"Rango del curso Investep", rangeOptimal:"ÓPTIMO", rangeWithin:"DENTRO DE LÍMITES", rangeOutside:"FUERA DE RANGO", rangeDue:"REVISAR REFERENCIA", rangeSoon:"REVISAR PRONTO", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
+    step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", loadSchwabOptions:"Cargar Opciones Schwab", courseRangeTitle:"Referencia guardada del curso Investep", rangeOptimal:"DENTRO DEL ÓPTIMO GUARDADO", rangeWithin:"DENTRO DE LÍMITES GUARDADOS", rangeOutside:"FUERA DE REFERENCIA GUARDADA", scanAll:"Escanear Todo", scanningAll:"Escaneando…", handoff:"Abrir PreFlight Completo", newSetup:"NUEVO", stillActive:"SIGUE ACTIVO", noLongerActive:"YA NO ACTIVO", noSetup:"SIN SETUP", currentRef:"VIGENTE", rangeDue:"REVISAR REFERENCIA", rangeSoon:"REVISAR PRONTO", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
     disclaimer:"PreFlight registra el cumplimiento de la metodología. No recomienda comprar, vender ni colocar una operación.",
     notChecked:"Aún no revisado", checking:"Revisando…", noEvent:"No se detectó ningún evento monitoreado", check:"Revisar", autoChecks:"chequeos auto", visualReview:"REVISIÓN VISUAL", developing:"DESARROLLANDO", autoAssisted:"AUTO ASISTIDO", courseRemaining:"condición(es) del curso todavía requieren revisión visual/calibrada.", lastScan:"Último escaneo", savedSnapshot:"SNAPSHOT GUARDADO", rescan:"Revisar de nuevo", schwabTitle:"Conexión de Datos del Broker", schwabCopy:"Conecta tu cuenta de Schwab para probar cotizaciones y acceso a la cadena de opciones.", schwabConnect:"Conectar Schwab", schwabConnected:"CONECTADO", schwabNotConnected:"NO CONECTADO", schwabConfigured:"Listo para conectar", schwabTest:"Probar cotización SPY", schwabOptionsTest:"Probar opciones SPY", schwabDisconnect:"Desconectar", schwabRealtime:"Tiempo real", schwabDelayed:"Indicador realtime no disponible",
     gapUp:"Gap al alza", gapDown:"Gap a la baja", priceCrossAboveMA20:"Precio cruzó por encima de MA20", priceCrossBelowMA20:"Precio cruzó por debajo de MA20", ma20CrossAbove40:"MA20 cruzó por encima de MA40", ma20CrossBelow40:"MA20 cruzó por debajo de MA40", priceCrossAboveMid:"Precio cruzó por encima del punto medio de Bollinger", priceCrossBelowMid:"Precio cruzó por debajo del punto medio de Bollinger", nearMid:"Precio dentro de 0.5% del punto medio de Bollinger"
@@ -39,6 +39,7 @@ function applyLanguage() {
   const schwabDisconnect=document.getElementById("schwabDisconnectBtn"); if(schwabDisconnect) schwabDisconnect.textContent=t("schwabDisconnect");
   const loadSchwabOptions=document.getElementById("loadSchwabOptionsBtn"); if(loadSchwabOptions) loadSchwabOptions.textContent=t("loadSchwabOptions");
   const courseRangeTitle=document.getElementById("courseRangeTitle"); if(courseRangeTitle) courseRangeTitle.textContent=t("courseRangeTitle");
+  const scanAllBtn=document.getElementById("scanAllBtn"); if(scanAllBtn && !scanAllBtn.disabled) scanAllBtn.textContent=t("scanAll");
   renderWatchlist();
   renderChecklist();
   updateStatus();
@@ -602,7 +603,37 @@ function formatScanTime(value) {
   });
 }
 
+function strategyCodes(result) { return (result?.strategies || []).map(s => s.code); }
+function deriveTransition(previous, nextStrategies) {
+  const before = strategyCodes(previous);
+  const after = (nextStrategies || []).map(s => s.code);
+  if (after.length && !before.some(code => after.includes(code))) return "NEW";
+  if (after.length && before.some(code => after.includes(code))) return "STILL ACTIVE";
+  if (!after.length && before.length) return "NO LONGER ACTIVE";
+  return "NO SETUP";
+}
+function transitionText(value) {
+  if (value==="NEW") return t("newSetup");
+  if (value==="STILL ACTIVE") return t("stillActive");
+  if (value==="NO LONGER ACTIVE") return t("noLongerActive");
+  return t("noSetup");
+}
+function renderOpportunityBoard() {
+  let visual=0, developing=0, none=0;
+  watchSymbols.forEach(symbol => {
+    const strategies=(watchResults[symbol]?.strategies || []);
+    if (strategies.some(s=>s.level==="VISUAL REVIEW")) visual++;
+    else if (strategies.length) developing++;
+    else none++;
+  });
+  const v=document.getElementById("oppVisual"), d=document.getElementById("oppDeveloping"), n=document.getElementById("oppNone"), b=document.getElementById("oppBatch");
+  if(v) v.textContent=String(visual); if(d) d.textContent=String(developing); if(n) n.textContent=String(none);
+  const last=localStorage.getItem("preflightLastBatchScan"); if(b) b.textContent=last ? formatScanTime(last) : "—";
+}
+function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+
 function renderWatchlist() {
+  renderOpportunityBoard();
   const wrap = document.getElementById("watchList");
   wrap.innerHTML = "";
   if (!watchSymbols.length) {
@@ -627,6 +658,7 @@ function renderWatchlist() {
         <strong>${symbol}</strong>
         <span>${result?.price ? money(result.price) : "—"}</span>
         ${result?.checkedAt && !result.loading ? `<small class="watch-saved">${t("savedSnapshot")} · ${formatScanTime(result.checkedAt)}</small>` : ""}
+        ${result?.transition && !result.loading ? `<small class="watch-transition ${result.transition.toLowerCase().replaceAll(" ","-")}">${transitionText(result.transition)}</small>` : ""}
       </div>
       <div>
         <div class="watch-events">${eventHtml}</div>
@@ -643,6 +675,7 @@ function renderWatchlist() {
                   <div class="strategy-watch-title">${s.label}</div>
                   ${s.details.map(d => `<div class="strategy-watch-line ${d.match ? "hit" : "miss"}">${d.match ? "✓" : "○"} ${d.text}${d.assisted ? ' <em>' + t("autoAssisted") + '</em>' : ''}</div>`).join("")}
                   <div class="strategy-watch-visual">${s.visualRemaining} ${t("courseRemaining")}</div>
+                  <button class="secondary strategy-handoff" type="button" data-symbol="${symbol}" data-strategy="${s.code}">${t("handoff")}</button>
                 </div>
               </details>
             `).join("")}
@@ -665,12 +698,14 @@ async function checkWatchSymbol(symbol) {
     const resp = await fetch("/api/market/" + encodeURIComponent(symbol));
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || "Unable to scan");
+    const strategies = strategyWatch(data);
     watchResults[symbol] = {
       loading: false,
       price: Number(data.price),
       events: detectWatchEvents(data),
       checkedAt: new Date().toISOString(),
-      strategies: strategyWatch(data)
+      strategies,
+      transition: deriveTransition(previous, strategies)
     };
     saveWatchResults();
   } catch (err) {
@@ -681,6 +716,22 @@ async function checkWatchSymbol(symbol) {
   }
   renderWatchlist();
 }
+
+async function scanAllWatchlist() {
+  const btn=document.getElementById("scanAllBtn");
+  if(!watchSymbols.length || btn.disabled) return;
+  btn.disabled=true; btn.textContent=t("scanningAll");
+  const symbols=[...watchSymbols];
+  for(let i=0;i<symbols.length;i++){
+    await checkWatchSymbol(symbols[i]);
+    if(i<symbols.length-1) await sleep(31000);
+  }
+  const now=new Date().toISOString();
+  localStorage.setItem("preflightLastBatchScan",now);
+  renderOpportunityBoard();
+  btn.disabled=false; btn.textContent=t("scanAll");
+}
+document.getElementById("scanAllBtn").addEventListener("click", scanAllWatchlist);
 
 document.getElementById("addWatchBtn").addEventListener("click", () => {
   const input = document.getElementById("watchTicker");
@@ -700,7 +751,21 @@ document.getElementById("watchTicker").addEventListener("keydown", e => {
   }
 });
 
-document.getElementById("watchList").addEventListener("click", e => {
+document.getElementById("watchList").addEventListener("click", async e => {
+  const handoff=e.target.closest(".strategy-handoff");
+  if(handoff){
+    const symbol=handoff.dataset.symbol, code=handoff.dataset.strategy;
+    const candidate=(watchResults[symbol]?.strategies || []).find(s=>s.code===code);
+    document.getElementById("ticker").value=symbol;
+    document.getElementById("strategyPresent").value="yes";
+    strategy.disabled=false; strategy.value=code;
+    const evidence=(candidate?.details || []).map(d=>(d.match?"✓":"○")+" "+d.text).join("\n");
+    document.getElementById("strategyNotes").value=(currentLang==="es" ? "Transferido desde Strategy Watch. Evidencia del escaneo:\n" : "Transferred from Strategy Watch. Scanner evidence:\n") + evidence;
+    await loadMarketData();
+    renderStrategyModule(code);
+    document.getElementById("strategySection").scrollIntoView({behavior:"smooth",block:"start"});
+    return;
+  }
   const check = e.target.closest(".watch-check");
   if (check) return checkWatchSymbol(check.dataset.symbol);
   const remove = e.target.closest("[data-remove]");
@@ -1188,10 +1253,9 @@ function courseReferenceFreshness(dateString) {
   const selected = document.getElementById("tradeDate").value;
   const asOf = selected ? localDateOnly(selected) : new Date();
   const analyzed = localDateOnly(dateString);
+  const review = new Date(analyzed); review.setMonth(review.getMonth()+6);
   const days = Math.floor((asOf - analyzed) / 86400000);
-  if (days > 183) return "due";
-  if (days > 150) return "soon";
-  return "current";
+  return { state: asOf > review ? "due" : days >= 150 ? "soon" : "current", days, review };
 }
 
 function updateCourseRange(symbol, premiumPerShare) {
@@ -1213,16 +1277,17 @@ function updateCourseRange(symbol, premiumPerShare) {
   else if(contractCost>=ref.limits[0] && contractCost<=ref.limits[1]) rangeState="within";
 
   const freshness=courseReferenceFreshness(ref.date);
+  document.getElementById("courseReviewDate").textContent = freshness.review.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+  document.getElementById("courseFreshness").textContent = freshness.state==="due" ? t("rangeDue") : freshness.state==="soon" ? t("rangeSoon") : t("currentRef");
   const status=document.getElementById("courseRangeStatus");
   status.className="range-status " + rangeState;
   status.textContent=rangeState==="optimal" ? t("rangeOptimal") : rangeState==="within" ? t("rangeWithin") : t("rangeOutside");
 
   const note=document.getElementById("courseRangeNote");
-  const freshText=freshness==="due" ? t("rangeDue") : freshness==="soon" ? t("rangeSoon") : "";
+  const freshText=freshness.state==="due" ? t("rangeDue") : freshness.state==="soon" ? t("rangeSoon") : t("currentRef");
   note.textContent=(currentLang==="es"
-    ? "Comparación = prima Schwab × 100 (1 contrato). Referencia fechada del curso; no es una recomendación."
-    : "Comparison = Schwab premium × 100 (1 contract). Dated course reference; not a trade recommendation.") +
-    (freshText ? " · " + freshText : "");
+    ? "Referencia histórica guardada. Comparación = prima Schwab × 100 (1 contrato). El rango no se recalcula aquí todavía."
+    : "Saved historical reference. Comparison = Schwab premium × 100 (1 contract). This range is not being recalculated here yet.") + " · " + freshText;
   box.hidden=false;
 
   const topRange=document.getElementById("priceRange");
