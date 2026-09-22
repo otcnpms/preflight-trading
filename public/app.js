@@ -199,11 +199,37 @@ async function loadMarketData() {
     document.getElementById("bbMiddle").textContent = money(bb.middle);
     document.getElementById("bbLower").textContent = money(bb.lower);
 
+    function bollingerContext(price, bb) {
+      if (![price, bb?.upper, bb?.middle, bb?.lower].every(v => Number.isFinite(Number(v)))) return "—";
+      if (price > bb.upper) return "Above upper band";
+      if (price < bb.lower) return "Below lower band";
+      if (price >= bb.middle) return "Above midpoint · inside bands";
+      return "Below midpoint · inside bands";
+    }
+
+    function maContext(price, ma) {
+      const pairs = [
+        ["20", ma?.ma20], ["40", ma?.ma40], ["100", ma?.ma100], ["200", ma?.ma200]
+      ].filter(([,v]) => Number.isFinite(Number(v)));
+      if (!Number.isFinite(Number(price)) || !pairs.length) return "—";
+      const above = pairs.filter(([,v]) => price >= Number(v)).map(([label]) => label);
+      const below = pairs.filter(([,v]) => price < Number(v)).map(([label]) => label);
+      if (above.length === pairs.length) return "Above 20 / 40 / 100 / 200";
+      if (below.length === pairs.length) return "Below 20 / 40 / 100 / 200";
+      const parts = [];
+      if (above.length) parts.push("Above " + above.join(" / "));
+      if (below.length) parts.push("Below " + below.join(" / "));
+      return parts.join(" · ");
+    }
+
     function paintTimeframe(prefix, tf, statusId) {
       const latest = tf?.latest || {};
       const tma = tf?.movingAverages || {};
       const tbb = tf?.bollinger || {};
-      document.getElementById(prefix + "Price").textContent = money(latest.close);
+      const price = Number(latest.close);
+      document.getElementById(prefix + "Price").textContent = money(price);
+      document.getElementById(prefix + "BbContext").textContent = bollingerContext(price, tbb);
+      document.getElementById(prefix + "MaContext").textContent = maContext(price, tma);
       document.getElementById(prefix + "BbUpper").textContent = money(tbb.upper);
       document.getElementById(prefix + "BbMid").textContent = money(tbb.middle);
       document.getElementById(prefix + "BbLower").textContent = money(tbb.lower);
@@ -213,7 +239,7 @@ async function loadMarketData() {
       document.getElementById(prefix + "Ma200").textContent = money(tma.ma200);
       if (statusId) {
         document.getElementById(statusId).textContent = tf?.available
-          ? "Observation only · no PASS/FAIL automation yet"
+          ? "Observation only"
           : (tf?.error || "Timeframe data unavailable");
       }
     }
@@ -311,3 +337,12 @@ document.getElementById("saveBtn").addEventListener("click", () => {
 
 renderChecklist();
 updateMetrics();
+
+document.addEventListener("click", e => {
+  const toggle = e.target.closest(".details-toggle");
+  if (!toggle) return;
+  const panel = document.getElementById(toggle.dataset.target);
+  const willOpen = panel.hidden;
+  panel.hidden = !willOpen;
+  toggle.textContent = willOpen ? "Hide details" : "Details";
+});
