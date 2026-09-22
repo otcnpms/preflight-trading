@@ -377,6 +377,18 @@ const strategyDefinitions = {
       "Según la metodología del curso, una vez cumplidos los requisitos la ejecución se contempla dentro de los primeros 5 minutos de la apertura del mercado.",
       "La nota del curso recomienda comenzar el análisis unos minutos antes de la apertura para confirmar que el precio abrirá con un salto considerable al alza respecto al cierre del día anterior."
     ]
+  },
+  E6: {
+    title: "Tendencia lateral · apertura fuera de Bollinger a la baja sin volatilidad",
+    meta: "Bollinger · temporalidad: 15 minutos · apertura del mercado",
+    direction: "Course-defined setup direction: bullish / call. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "En temporalidad 15 minutos, en Bollinger la tendencia debe ser totalmente lateral y sin volatilidad.",
+      "El precio debe aperturar con un salto a la baja y quedar extremadamente alejado del oscilador inferior, en zona de sobreventa.",
+      "Observar que el precio comience a subir después de la apertura.",
+      "Según la metodología del curso, una vez cumplidos los requisitos la compra de contratos call se contempla dentro de los primeros 5 minutos de la apertura del mercado.",
+      "La estrategia se concentra en los primeros movimientos del mercado; el material del curso indica que el desplazamiento principal puede ocurrir dentro de los primeros 15 minutos."
+    ]
   }
 };
 
