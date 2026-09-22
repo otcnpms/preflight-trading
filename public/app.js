@@ -389,6 +389,17 @@ const strategyDefinitions = {
       "Según la metodología del curso, una vez cumplidos los requisitos la compra de contratos call se contempla dentro de los primeros 5 minutos de la apertura del mercado.",
       "La estrategia se concentra en los primeros movimientos del mercado; el material del curso indica que el desplazamiento principal puede ocurrir dentro de los primeros 15 minutos."
     ]
+  },
+  E7: {
+    title: "Efecto Imán · tendencia bajista · medias móviles 20 y 40",
+    meta: "Gráfico 1 hora · Bollinger 15 minutos · volumen + Worden Stochastics",
+    direction: "Course-defined setup direction: bullish / call. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "En las medias móviles, la tendencia debe ser claramente bajista y llevar varios días bajando.",
+      "El precio debe abrir con un fuerte salto a la baja y quedar muy alejado de la media móvil de 20 períodos.",
+      "En Bollinger de 15 minutos, la primera vela debe quedar completamente fuera del oscilador.",
+      "Cuando comience a formarse la vela en el indicador de volumen, debe cruzar la línea roja del indicador Worden Stochastics; el material del curso lo usa como confirmación de compra de contratos call."
+    ]
   }
 };
 
