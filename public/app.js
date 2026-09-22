@@ -742,66 +742,40 @@ function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
 
 function renderWatchlist() {
   renderOpportunityBoard();
+  renderWatchBoardControls();
   const wrap = document.getElementById("watchList");
+  const detail = document.getElementById("watchDetail");
   wrap.innerHTML = "";
   if (!watchSymbols.length) {
-    wrap.innerHTML = '<p class="muted watch-empty">' + (currentLang === "es" ? "Agrega un ticker para monitorear cruces, eventos del punto medio y gaps." : "Add a ticker to start watching for crosses, midpoint events and gaps.") + '</p>';
+    wrap.innerHTML = '<p class="muted watch-empty">' + (currentLang === "es" ? "Agrega un ticker para comenzar esta watchlist." : "Add a ticker to start this watchlist.") + '</p>';
+    if (detail) detail.innerHTML = '<div class="watch-detail-empty"><strong>'+t("selectWatchStock")+'</strong><span>'+t("selectWatchStockHint")+'</span></div>';
     return;
   }
+  if (!watchSymbols.includes(selectedWatchSymbol)) selectedWatchSymbol = watchSymbols[0];
   watchSymbols.forEach(symbol => {
     const result = watchResults[symbol];
+    const strongest = result?.strategies?.[0] || null;
     const row = document.createElement("div");
-    row.className = "watch-row";
+    row.className = "watch-row compact" + (symbol===selectedWatchSymbol ? " selected" : "");
     row.dataset.symbol = symbol;
-    row.setAttribute("role", "button");
-    row.setAttribute("tabindex", "0");
-    const eventHtml = !result
-      ? '<span class="watch-state">' + t("notChecked") + '</span>'
-      : result.loading
-        ? '<span class="watch-state">' + t("checking") + '</span>'
-        : result.error
-          ? '<span class="watch-state bad">' + result.error + '</span>'
-          : result.events.length
-            ? result.events.map(x => '<span class="watch-event">' + x + '</span>').join("")
-            : '<span class="watch-state">' + t("noEvent") + '</span>';
-    row.innerHTML = `
-      <div class="watch-symbol">
-        <strong>${symbol}</strong>
-        <span>${result?.price ? money(result.price) : "—"}</span>
-        ${result?.checkedAt && !result.loading ? `<small class="watch-saved">${t("savedSnapshot")} · ${formatScanTime(result.checkedAt)}</small>` : ""}
-        ${result?.transition && !result.loading ? `<small class="watch-transition ${result.transition.toLowerCase().replaceAll(" ","-")}">${transitionText(result.transition)}</small>` : ""}
-      </div>
-      <div>
-        <div class="watch-events">${eventHtml}</div>
-        ${result?.strategies?.length ? `
-          <div class="strategy-watch">
-            ${result.strategies.map(s => `
-              <details class="strategy-watch-item">
-                <summary>
-                  <span class="strategy-watch-code">${s.code}</span>
-                  <span>${s.level === "VISUAL REVIEW" ? t("visualReview") : t("developing")}</span>
-                  <strong>${s.matched}/${s.known} ${t("autoChecks")}</strong>
-                  <button class="strategy-quick-open" type="button" data-symbol="${symbol}" data-strategy="${s.code}" aria-label="${t("handoff")}">OPEN</button>
-                </summary>
-                <div class="strategy-watch-detail">
-                  <div class="strategy-watch-title">${s.label}</div>
-                  ${s.details.map(d => `<div class="strategy-watch-line ${d.match ? "hit" : "miss"}">${d.match ? "✓" : "○"} ${d.text}${d.assisted ? ' <em>' + t("autoAssisted") + '</em>' : ''}</div>`).join("")}
-                  <div class="strategy-watch-visual">${s.visualRemaining} ${t("courseRemaining")}</div>
-                  <button class="secondary strategy-handoff" type="button" data-symbol="${symbol}" data-strategy="${s.code}">${t("handoff")}</button>
-                </div>
-              </details>
-            `).join("")}
-          </div>` : ""}
-      </div>
-      <div class="watch-actions">
-        <button class="secondary watch-check" type="button" data-symbol="${symbol}">${result?.checkedAt ? t("rescan") : t("check")}</button>
-        <button class="watch-remove" type="button" data-remove="${symbol}" aria-label="Remove ${symbol}">×</button>
-      </div>
-    `;
+    row.setAttribute("role","button"); row.setAttribute("tabindex","0");
+    row.innerHTML = '<div class="watch-symbol compact-symbol"><strong>'+symbol+'</strong><span>'+(result?.price ? money(result.price) : "—")+'</span></div>' +
+      '<div class="watch-row-signal">' + (strongest ? '<span class="watch-best-code">'+strongest.code+'</span><span class="watch-best-level">'+(strongest.level==="VISUAL REVIEW" ? t("visualReview") : t("developing"))+'</span><small>'+strongest.matched+'/'+strongest.known+'</small>' : '<span class="watch-state">'+(result?.loading ? t("checking") : result ? t("noSetup") : t("notChecked"))+'</span>') + '</div>' +
+      '<div class="watch-row-tools"><button class="watch-mini watch-check" type="button" data-symbol="'+symbol+'">↻</button><button class="watch-mini watch-remove" type="button" data-remove="'+symbol+'">×</button></div>';
     wrap.appendChild(row);
   });
+  renderSelectedWatchDetail();
 }
 
+function renderSelectedWatchDetail() {
+  const detail=document.getElementById("watchDetail"); if(!detail) return;
+  const symbol=selectedWatchSymbol; const result=watchResults[symbol];
+  if(!symbol){ detail.innerHTML='<div class="watch-detail-empty"><strong>'+t("selectWatchStock")+'</strong><span>'+t("selectWatchStockHint")+'</span></div>'; return; }
+  const eventHtml = !result ? '<span class="watch-state">'+t("notChecked")+'</span>' : result.loading ? '<span class="watch-state">'+t("checking")+'</span>' : result.error ? '<span class="watch-state bad">'+result.error+'</span>' : result.events?.length ? result.events.map(x=>'<span class="watch-event">'+x+'</span>').join("") : '<span class="watch-state">'+t("noEvent")+'</span>';
+  const strategies=result?.strategies || [];
+  const strategyHtml = strategies.length ? strategies.map(s => '<details class="strategy-watch-item"><summary><span class="strategy-watch-code">'+s.code+'</span><span>'+(s.level==="VISUAL REVIEW"?t("visualReview"):t("developing"))+'</span><strong>'+s.matched+'/'+s.known+' '+t("autoChecks")+'</strong><button class="strategy-quick-open" type="button" data-symbol="'+symbol+'" data-strategy="'+s.code+'">OPEN</button></summary><div class="strategy-watch-detail"><div class="strategy-watch-title">'+swName(s.code,s.label)+'</div>'+s.details.map(d=>'<div class="strategy-watch-line '+(d.match?"hit":"miss")+'">'+(d.match?"✓":"○")+' '+swEvidence(d.text)+(d.assisted?' <em>'+t("autoAssisted")+'</em>':"")+'</div>').join("")+'<div class="strategy-watch-visual">'+s.visualRemaining+' '+t("courseRemaining")+'</div><button class="secondary strategy-handoff" type="button" data-symbol="'+symbol+'" data-strategy="'+s.code+'">'+t("handoff")+'</button></div></details>').join("") : '<p class="muted watch-empty">'+t("noSetup")+'</p>';
+  detail.innerHTML = '<div class="watch-detail-head"><div><span class="step">'+(currentLang==="es"?"ACCIÓN SELECCIONADA":"SELECTED STOCK")+'</span><h3>'+symbol+' <small>'+(result?.price?money(result.price):"—")+'</small></h3></div><div class="watch-detail-actions"><button class="secondary watch-check" type="button" data-symbol="'+symbol+'">'+(result?.checkedAt?t("rescan"):t("check"))+'</button><button class="primary watch-options-jump" type="button" data-symbol="'+symbol+'">'+t("quickOptions")+'</button></div></div><div class="watch-detail-meta">'+(result?.checkedAt?'<span>'+t("savedSnapshot")+' · '+formatScanTime(result.checkedAt)+'</span>':"")+(result?.transition?'<span class="watch-transition '+result.transition.toLowerCase().replaceAll(" ","-")+'">'+transitionText(result.transition)+'</span>':"")+'</div><div class="watch-events detail-events">'+eventHtml+'</div><div class="strategy-watch detail-strategies">'+strategyHtml+'</div>';
+}
 async function checkWatchSymbol(symbol) {
   const previous = watchResults[symbol] || null;
   watchResults[symbol] = { ...(previous || {}), loading: true };
