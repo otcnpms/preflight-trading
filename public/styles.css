@@ -173,3 +173,9 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
 .strategy-watch-line.hit { color:var(--good); }
 .strategy-watch-line em { color:#c9d8e8; font-size:8px; font-style:normal; border:1px solid #38506d; border-radius:999px; padding:1px 5px; margin-left:4px; }
 .strategy-watch-visual { color:var(--gold); font-size:9px; margin-top:6px; }
+
+.topbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.lang-toggle{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#0a1524}
+.lang-btn{border:0;background:transparent;color:var(--muted);padding:8px 10px;font-weight:850;cursor:pointer;font-size:11px}
+.lang-btn.active{background:var(--gold);color:#171004}
+@media(max-width:760px){.topbar-actions{width:100%;justify-content:space-between}}
