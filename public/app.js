@@ -265,12 +265,90 @@ document.getElementById("ticker").addEventListener("keydown", e => {
   if (e.key === "Enter") loadMarketData();
 });
 
+
+const strategyDefinitions = {
+  E1: {
+    title: "Cambio de tendencia al alza",
+    meta: "Bollinger · temporalidad principal: 1 hora · confirmación: 15 minutos",
+    direction: "Course-defined setup direction: bullish / call. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "Trazar una línea de tendencia sobre la trayectoria bajista, bordeando levemente por encima la mayor cantidad de puntos posibles.",
+      "El precio rompe la línea de tendencia bajista.",
+      "La ruptura puede ocurrir durante el día o en forma de salto (gap).",
+      "En la temporalidad de 1 hora, el precio rompe la media móvil de 20 períodos y termina con una vela de confirmación alcista.",
+      "Al cambiar a 15 minutos, la tendencia debe mostrarse totalmente alcista."
+    ]
+  }
+};
+
+const strategyConfirmations = {};
+
+function renderStrategyModule(code) {
+  const module = document.getElementById("strategyModule");
+  const def = strategyDefinitions[code];
+  if (!def) {
+    module.hidden = true;
+    return;
+  }
+
+  module.hidden = false;
+  document.getElementById("strategyCode").textContent = code;
+  document.getElementById("strategyTitle").textContent = def.title;
+  document.getElementById("strategyMeta").textContent = def.meta;
+  document.getElementById("strategyCourseDirection").textContent = def.direction;
+
+  if (!strategyConfirmations[code]) {
+    strategyConfirmations[code] = Array(def.requirements.length).fill(false);
+  }
+
+  const wrap = document.getElementById("strategyRequirements");
+  wrap.innerHTML = "";
+  def.requirements.forEach((text, index) => {
+    const row = document.createElement("label");
+    row.className = "strategy-check";
+    row.innerHTML = `
+      <input type="checkbox" data-strategy="${code}" data-index="${index}" ${strategyConfirmations[code][index] ? "checked" : ""}>
+      <span><strong>Requirement ${index + 1}</strong><small>${text}</small></span>
+    `;
+    wrap.appendChild(row);
+  });
+  updateStrategyProgress(code);
+}
+
+function updateStrategyProgress(code) {
+  const def = strategyDefinitions[code];
+  if (!def) return;
+  const values = strategyConfirmations[code] || [];
+  const complete = values.filter(Boolean).length;
+  document.getElementById("strategyProgress").textContent = `${complete} / ${def.requirements.length} confirmed`;
+}
+
+document.getElementById("strategyRequirements").addEventListener("change", e => {
+  const box = e.target.closest('input[type="checkbox"][data-strategy]');
+  if (!box) return;
+  const code = box.dataset.strategy;
+  const index = Number(box.dataset.index);
+  if (!strategyConfirmations[code]) return;
+  strategyConfirmations[code][index] = box.checked;
+  updateStrategyProgress(code);
+});
+
+
 const strategyPresent = document.getElementById("strategyPresent");
 const strategy = document.getElementById("strategy");
 strategyPresent.addEventListener("change", () => {
   const active = strategyPresent.value === "yes";
   strategy.disabled = !active;
-  if (!active) strategy.value = "";
+  if (!active) {
+    strategy.value = "";
+    document.getElementById("strategyModule").hidden = true;
+  } else if (strategy.value) {
+    renderStrategyModule(strategy.value);
+  }
+});
+
+strategy.addEventListener("change", () => {
+  renderStrategyModule(strategy.value);
 });
 
 function number(id) {
@@ -296,6 +374,7 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   document.querySelectorAll("input,textarea").forEach(el => { if (el.id !== "tradeDate") el.value = ""; });
   document.querySelectorAll("select").forEach(el => el.selectedIndex = 0);
   strategy.disabled = true;
+  document.getElementById("strategyModule").hidden = true;
   document.getElementById("marketCard").hidden = true;
   document.getElementById("marketMessage").textContent = "Enter a ticker and load market data.";
   updateMetrics();
@@ -311,6 +390,9 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     marketSnapshot: state.market,
     checks: state.checks,
     strategy: strategyPresent.value === "yes" ? strategy.value : null,
+    strategyRequirements: strategyPresent.value === "yes" && strategy.value
+      ? strategyConfirmations[strategy.value] || []
+      : [],
     strategyNotes: document.getElementById("strategyNotes").value,
     option: {
       type: document.getElementById("optionType").value,
