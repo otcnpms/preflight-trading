@@ -348,6 +348,173 @@ function detectWatchEvents(data) {
   return [...new Set(events)];
 }
 
+function crossedAbove(prevValue, prevReference, value, reference) {
+  return [prevValue, prevReference, value, reference].every(v => Number.isFinite(Number(v))) &&
+    Number(prevValue) <= Number(prevReference) && Number(value) > Number(reference);
+}
+
+function crossedBelow(prevValue, prevReference, value, reference) {
+  return [prevValue, prevReference, value, reference].every(v => Number.isFinite(Number(v))) &&
+    Number(prevValue) >= Number(prevReference) && Number(value) < Number(reference);
+}
+
+function strategyWatch(data) {
+  const tf15 = data.timeframes?.min15 || {};
+  const tf1h = data.timeframes?.hour1 || {};
+  const tfD = data.timeframes?.daily || {};
+  const gap = Number(data.gapPct);
+
+  const c15 = Number(tf15.latest?.close), p15 = Number(tf15.previous?.close);
+  const o15 = Number(tf15.latest?.open), h15 = Number(tf15.latest?.high), l15 = Number(tf15.latest?.low);
+  const c1 = Number(tf1h.latest?.close), p1 = Number(tf1h.previous?.close), o1 = Number(tf1h.latest?.open);
+  const cD = Number(tfD.latest?.close), hD = Number(tfD.latest?.high), lD = Number(tfD.latest?.low);
+  const ma15 = tf15.movingAverages || {}, pma15 = tf15.previousMovingAverages || {};
+  const ma1 = tf1h.movingAverages || {}, pma1 = tf1h.previousMovingAverages || {};
+  const maD = tfD.movingAverages || {}, pmaD = tfD.previousMovingAverages || {};
+  const bb15 = tf15.bollinger || {}, pbb15 = tf15.previousBollinger || {};
+  const bb1 = tf1h.bollinger || {};
+  const bbD = tfD.bollinger || {};
+
+  const results = [];
+  const add = (code, label, checks, visualRemaining) => {
+    const known = checks.filter(x => x.known);
+    const matched = known.filter(x => x.match);
+    if (!known.length || !matched.length) return;
+    const ratio = matched.length / known.length;
+    if (matched.length < 2 && ratio < 0.75) return;
+    const level = ratio >= 0.75 && matched.length >= 2 ? "VISUAL REVIEW" : "DEVELOPING";
+    results.push({
+      code, label, level,
+      matched: matched.length,
+      known: known.length,
+      visualRemaining,
+      details: checks.filter(x => x.known).map(x => ({ text:x.text, match:x.match, assisted:!!x.assisted }))
+    });
+  };
+  const finite = (...xs) => xs.every(v => Number.isFinite(Number(v)));
+
+  const oneHourBullCross = crossedAbove(p1, pma1.ma20, c1, ma1.ma20);
+  const oneHourBearCross = crossedBelow(p1, pma1.ma20, c1, ma1.ma20);
+  const fifteenAboveAll = finite(c15, ma15.ma20, ma15.ma40) && c15 > Number(ma15.ma20) && c15 > Number(ma15.ma40);
+  const fifteenBelowAll = finite(c15, ma15.ma20, ma15.ma40) && c15 < Number(ma15.ma20) && c15 < Number(ma15.ma40);
+
+  add("E1","Cambio de tendencia al alza",[
+    {known:Number.isFinite(gap), match:gap>0, text:"Gap up present (one allowed break mechanism)"},
+    {known:finite(p1,pma1.ma20,c1,ma1.ma20), match:oneHourBullCross, text:"1H price crossed above MA20"},
+    {known:finite(c1,o1), match:c1>o1, text:"Current 1H candle bullish", assisted:true},
+    {known:finite(c15,ma15.ma20,ma15.ma40), match:fifteenAboveAll, text:"15m close above MA20 and MA40", assisted:true}
+  ],2);
+
+  add("E2","Cambio de tendencia a la baja",[
+    {known:Number.isFinite(gap), match:gap<0, text:"Gap down present (one allowed break mechanism)"},
+    {known:finite(p1,pma1.ma20,c1,ma1.ma20), match:oneHourBearCross, text:"1H price crossed below MA20"},
+    {known:finite(c1,o1), match:c1<o1, text:"Current 1H candle bearish", assisted:true},
+    {known:finite(c15,ma15.ma20,ma15.ma40), match:fifteenBelowAll, text:"15m close below MA20 and MA40", assisted:true}
+  ],2);
+
+  const dailyBearish = finite(maD.ma20,pmaD.ma20,cD,bbD.middle) && Number(maD.ma20) < Number(pmaD.ma20) && cD <= Number(bbD.middle);
+  const dailyBullish = finite(maD.ma20,pmaD.ma20,cD,bbD.middle) && Number(maD.ma20) > Number(pmaD.ma20) && cD >= Number(bbD.middle);
+  const hourBullish = finite(ma1.ma20,pma1.ma20,c1,bb1.middle) && Number(ma1.ma20) > Number(pma1.ma20) && c1 >= Number(bb1.middle);
+  const hourBearish = finite(ma1.ma20,pma1.ma20,c1,bb1.middle) && Number(ma1.ma20) < Number(pma1.ma20) && c1 <= Number(bb1.middle);
+  const dailyNearMid = finite(cD,bbD.middle) && Math.abs(((cD-Number(bbD.middle))/Number(bbD.middle))*100) <= 0.5;
+  const e3Respected = finite(hD,cD,bbD.middle) && hD >= Number(bbD.middle)*0.995 && cD <= Number(bbD.middle);
+  const e4Respected = finite(lD,cD,bbD.middle) && lD <= Number(bbD.middle)*1.005 && cD >= Number(bbD.middle);
+
+  add("E3","Rebote en punto medio · tendencia a la baja",[
+    {known:finite(maD.ma20,pmaD.ma20,cD,bbD.middle), match:dailyBearish, text:"Daily structure bearish", assisted:true},
+    {known:finite(ma1.ma20,pma1.ma20,c1,bb1.middle), match:hourBullish, text:"1H structure bullish", assisted:true},
+    {known:finite(cD,bbD.middle), match:dailyNearMid, text:"Daily price within 0.5% of Bollinger midpoint", assisted:true},
+    {known:finite(hD,cD,bbD.middle), match:e3Respected, text:"Midpoint appears respected as resistance (provisional 0.5% tolerance)", assisted:true},
+    {known:finite(c1,o1), match:c1<o1, text:"Current 1H candle bearish", assisted:true}
+  ],1);
+
+  add("E4","Rebote en punto medio · tendencia al alza",[
+    {known:finite(maD.ma20,pmaD.ma20,cD,bbD.middle), match:dailyBullish, text:"Daily structure bullish", assisted:true},
+    {known:finite(ma1.ma20,pma1.ma20,c1,bb1.middle), match:hourBearish, text:"1H structure bearish", assisted:true},
+    {known:finite(cD,bbD.middle), match:dailyNearMid, text:"Daily price within 0.5% of Bollinger midpoint", assisted:true},
+    {known:finite(lD,cD,bbD.middle), match:e4Respected, text:"Midpoint appears respected as support (provisional 0.5% tolerance)", assisted:true},
+    {known:finite(c1,o1), match:c1>o1, text:"Current 1H candle bullish", assisted:true}
+  ],1);
+
+  const gapUp = Number.isFinite(gap) && gap >= 0.5;
+  const gapDown = Number.isFinite(gap) && gap <= -0.5;
+  const aboveUpper = finite(c15,bb15.upper) && c15 > Number(bb15.upper);
+  const belowLower = finite(c15,bb15.lower) && c15 < Number(bb15.lower);
+  const candleDown15 = finite(c15,o15) && c15 < o15;
+  const candleUp15 = finite(c15,o15) && c15 > o15;
+
+  add("E5","Lateral · apertura fuera de Bollinger al alza",[
+    {known:Number.isFinite(gap), match:gapUp, text:"Gap up ≥ 0.5%", assisted:true},
+    {known:finite(c15,bb15.upper), match:aboveUpper, text:"15m price above upper Bollinger band", assisted:true},
+    {known:finite(c15,o15), match:candleDown15, text:"Current 15m candle moving down", assisted:true}
+  ],2);
+
+  add("E6","Lateral · apertura fuera de Bollinger a la baja",[
+    {known:Number.isFinite(gap), match:gapDown, text:"Gap down ≤ -0.5%", assisted:true},
+    {known:finite(c15,bb15.lower), match:belowLower, text:"15m price below lower Bollinger band", assisted:true},
+    {known:finite(c15,o15), match:candleUp15, text:"Current 15m candle moving up", assisted:true}
+  ],2);
+
+  const trend1Bear = finite(ma1.ma20,pma1.ma20,ma1.ma40,pma1.ma40) && Number(ma1.ma20)<Number(pma1.ma20) && Number(ma1.ma40)<Number(pma1.ma40);
+  const trend1Bull = finite(ma1.ma20,pma1.ma20,ma1.ma40,pma1.ma40) && Number(ma1.ma20)>Number(pma1.ma20) && Number(ma1.ma40)>Number(pma1.ma40);
+  const farMa20 = finite(c1,ma1.ma20) ? Math.abs(((c1-Number(ma1.ma20))/Number(ma1.ma20))*100) : null;
+
+  add("E7","Efecto Imán · tendencia bajista",[
+    {known:finite(ma1.ma20,pma1.ma20,ma1.ma40,pma1.ma40), match:trend1Bear, text:"1H MA20 and MA40 sloping down", assisted:true},
+    {known:Number.isFinite(gap), match:gapDown, text:"Gap down present", assisted:true},
+    {known:farMa20!==null, match:farMa20!==null && farMa20>=1, text:"1H price at least 1% from MA20 (provisional)", assisted:true},
+    {known:finite(c15,bb15.lower), match:belowLower, text:"15m price below lower Bollinger band", assisted:true}
+  ],1);
+
+  add("E8","Efecto Imán · tendencia alcista",[
+    {known:finite(ma1.ma20,pma1.ma20,ma1.ma40,pma1.ma40), match:trend1Bull, text:"1H MA20 and MA40 sloping up", assisted:true},
+    {known:Number.isFinite(gap), match:gapUp, text:"Gap up present", assisted:true},
+    {known:farMa20!==null, match:farMa20!==null && farMa20>=1, text:"1H price at least 1% from MA20 (provisional)", assisted:true},
+    {known:finite(c15,bb15.upper), match:aboveUpper, text:"15m price above upper Bollinger band", assisted:true}
+  ],1);
+
+  const midCrossUp15 = crossedAbove(p15,pbb15.middle,c15,bb15.middle);
+  const midCrossDown15 = crossedBelow(p15,pbb15.middle,c15,bb15.middle);
+  const bbWidth15 = finite(bb15.upper,bb15.lower,bb15.middle) ? ((Number(bb15.upper)-Number(bb15.lower))/Number(bb15.middle))*100 : null;
+  const prevWidth15 = finite(pbb15.upper,pbb15.lower,pbb15.middle) ? ((Number(pbb15.upper)-Number(pbb15.lower))/Number(pbb15.middle))*100 : null;
+  const expanding15 = bbWidth15!==null && prevWidth15!==null && bbWidth15 > prevWidth15;
+
+  add("E9","Cambio de tendencia al alza · Bollinger 15m",[
+    {known:Number.isFinite(gap), match:gapUp, text:"Gap up present"},
+    {known:finite(p15,pbb15.middle,c15,bb15.middle), match:midCrossUp15, text:"15m price crossed above Bollinger midpoint"},
+    {known:bbWidth15!==null && prevWidth15!==null, match:expanding15, text:"15m Bollinger width expanding", assisted:true}
+  ],2);
+
+  add("E10","Cambio de tendencia a la baja · Bollinger 15m",[
+    {known:Number.isFinite(gap), match:gapDown, text:"Gap down present"},
+    {known:finite(p15,pbb15.middle,c15,bb15.middle), match:midCrossDown15, text:"15m price crossed below Bollinger midpoint"},
+    {known:bbWidth15!==null && prevWidth15!==null, match:expanding15, text:"15m Bollinger width expanding", assisted:true}
+  ],2);
+
+  const maCompression = finite(maD.ma20,maD.ma40,maD.ma100,maD.ma200,cD) ? 
+    (Math.max(Number(maD.ma20),Number(maD.ma40),Number(maD.ma100),Number(maD.ma200))-
+     Math.min(Number(maD.ma20),Number(maD.ma40),Number(maD.ma100),Number(maD.ma200))) / cD * 100 : null;
+  const compressed = maCompression!==null && maCompression <= 3;
+  const bullBreak = Number.isFinite(gap) && gap>0 || (finite(cD,tfD.latest?.open) && cD>Number(tfD.latest.open));
+  const bearBreak = Number.isFinite(gap) && gap<0 || (finite(cD,tfD.latest?.open) && cD<Number(tfD.latest.open));
+  const bbWidth1 = finite(bb1.upper,bb1.lower,bb1.middle) ? ((Number(bb1.upper)-Number(bb1.lower))/Number(bb1.middle))*100 : null;
+
+  add("E11","Lateral al alza · mediano plazo",[
+    {known:maCompression!==null, match:compressed, text:"Daily MA20/40/100/200 compressed within 3% (provisional)", assisted:true},
+    {known:true, match:bullBreak, text:"Current Daily candle/gap bullish", assisted:true},
+    {known:finite(c1,o1), match:c1>o1, text:"Current 1H candle bullish", assisted:true},
+    {known:bbWidth1!==null, match:bbWidth1!==null && bbWidth1>=2, text:"1H Bollinger width ≥ 2% (provisional)", assisted:true}
+  ],2);
+
+  add("E12","Lateral a la baja · mediano plazo",[
+    {known:maCompression!==null, match:compressed, text:"Daily MA20/40/100/200 compressed within 3% (provisional)", assisted:true},
+    {known:true, match:bearBreak, text:"Current Daily candle/gap bearish", assisted:true},
+    {known:finite(c1,o1), match:c1<o1, text:"Current 1H candle bearish", assisted:true},
+    {known:bbWidth1!==null, match:bbWidth1!==null && bbWidth1>=2, text:"1H Bollinger width ≥ 2% (provisional)", assisted:true}
+  ],2);
+
+  return results.sort((a,b) => (b.matched/b.known) - (a.matched/a.known) || b.matched-a.matched).slice(0,3);
+}
 let watchSymbols = JSON.parse(localStorage.getItem("preflightWatchlist") || "[]");
 const watchResults = {};
 
@@ -380,7 +547,26 @@ function renderWatchlist() {
         <strong>${symbol}</strong>
         <span>${result?.price ? money(result.price) : "—"}</span>
       </div>
-      <div class="watch-events">${eventHtml}</div>
+      <div>
+        <div class="watch-events">${eventHtml}</div>
+        ${result?.strategies?.length ? `
+          <div class="strategy-watch">
+            ${result.strategies.map(s => `
+              <details class="strategy-watch-item">
+                <summary>
+                  <span class="strategy-watch-code">${s.code}</span>
+                  <span>${s.level}</span>
+                  <strong>${s.matched}/${s.known} auto checks</strong>
+                </summary>
+                <div class="strategy-watch-detail">
+                  <div class="strategy-watch-title">${s.label}</div>
+                  ${s.details.map(d => `<div class="strategy-watch-line ${d.match ? "hit" : "miss"}">${d.match ? "✓" : "○"} ${d.text}${d.assisted ? ' <em>AUTO ASSISTED</em>' : ''}</div>`).join("")}
+                  <div class="strategy-watch-visual">${s.visualRemaining} course condition(s) still require visual/calibrated review.</div>
+                </div>
+              </details>
+            `).join("")}
+          </div>` : ""}
+      </div>
       <div class="watch-actions">
         <button class="secondary watch-check" type="button" data-symbol="${symbol}">Check</button>
         <button class="watch-remove" type="button" data-remove="${symbol}" aria-label="Remove ${symbol}">×</button>
@@ -401,7 +587,8 @@ async function checkWatchSymbol(symbol) {
       loading: false,
       price: Number(data.price),
       events: detectWatchEvents(data),
-      checkedAt: new Date().toISOString()
+      checkedAt: new Date().toISOString(),
+      strategies: strategyWatch(data)
     };
   } catch (err) {
     watchResults[symbol] = { loading: false, error: err.message || "Scan failed", events: [] };
