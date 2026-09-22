@@ -230,7 +230,18 @@
     </section>
 
     <section class="card">
-      <div class="section-head"><div><p class="step" data-i18n="step3">STEP 3</p><h2 data-i18n="optionDetails">Option Details</h2></div></div>
+      <div class="section-head">
+        <div><p class="step" data-i18n="step3">STEP 3</p><h2 data-i18n="optionDetails">Option Details</h2></div>
+        <button class="secondary" id="loadSchwabOptionsBtn" type="button">Load Schwab Options</button>
+      </div>
+      <div class="option-chain-picker" id="optionChainPicker" hidden>
+        <div class="grid three">
+          <label>Expiration<select id="chainExpiration"><option value="">Select expiration</option></select></label>
+          <label>Type<select id="chainType"><option value="">Select type</option><option value="CALL">CALL</option><option value="PUT">PUT</option></select></label>
+          <label>Strike<select id="chainStrike"><option value="">Select strike</option></select></label>
+        </div>
+        <div class="chain-status muted" id="chainStatus">Load a ticker to browse Schwab option contracts.</div>
+      </div>
       <div class="grid four">
         <label>Type<select id="optionType"><option value="">—</option><option>CALL</option><option>PUT</option></select></label>
         <label>Expiration<input id="expiration" type="date" /></label>
