@@ -1464,10 +1464,60 @@ function updateMetrics() {
     : null;
 
   renderChecklist();
+  updatePositionPlan();
 }
+
+function updatePositionPlan() {
+  const plan = document.getElementById("plan").value;
+  const percentEl = document.getElementById("planPercent");
+  const entry = number("entryPrice");
+  const contracts = number("contracts");
+  const adjustmentRaw = number("transactionAdjustment");
+  const adjustment = adjustmentRaw === null ? 0 : adjustmentRaw;
+
+  if (plan === "10%") { percentEl.value = "10"; percentEl.readOnly = true; }
+  else if (plan === "35%") { percentEl.value = "35"; percentEl.readOnly = true; }
+  else if (plan === "100%") { percentEl.value = "100"; percentEl.readOnly = true; }
+  else { percentEl.readOnly = false; if (!plan) percentEl.value = ""; }
+
+  const percent = number("planPercent");
+  const ready = entry !== null && contracts !== null && contracts > 0 && percent !== null;
+
+  document.getElementById("planEntryPrice").textContent = entry !== null ? money(entry) : "—";
+  document.getElementById("planAdjustmentDollar").textContent = money(adjustment);
+
+  if (!ready) {
+    document.getElementById("planEntryValue").textContent = "—";
+    document.getElementById("planProfitDollar").textContent = "—";
+    document.getElementById("planTargetValue").textContent = "—";
+    document.getElementById("planTargetOptionPrice").textContent = "—";
+    document.getElementById("targetDollar").value = "";
+    document.getElementById("positionPlanStatus").textContent =
+      currentLang === "es" ? "Ingresa fill real + contratos + plan" : "Enter actual fill + contracts + plan";
+    return;
+  }
+
+  const entryValue = entry * 100 * contracts;
+  const planProfit = entryValue * (percent / 100);
+  const targetValue = entryValue + planProfit + adjustment;
+  const targetOptionPrice = targetValue / (100 * contracts);
+
+  document.getElementById("planEntryValue").textContent = money(entryValue);
+  document.getElementById("planProfitDollar").textContent = money(planProfit);
+  document.getElementById("planTargetValue").textContent = money(targetValue);
+  document.getElementById("planTargetOptionPrice").textContent = money(targetOptionPrice);
+  document.getElementById("targetDollar").value = planProfit.toFixed(2);
+  document.getElementById("positionPlanStatus").textContent =
+    `${percent.toFixed(2).replace(/\.00$/,"")}% · ${contracts} contract${contracts===1?"":"s"}`;
+}
+
 ["bid","ask","spotPrice","strikePrice","contracts","entryPrice","expiration","optionType","tradeDate"].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener(el.tagName === "SELECT" || el.type === "date" ? "change" : "input", updateMetrics);
+});
+["plan","planPercent","transactionAdjustment"].forEach(id => {
+  const el=document.getElementById(id);
+  el.addEventListener(el.tagName==="SELECT" ? "change" : "input", updatePositionPlan);
 });
 
 document.getElementById("tradeDate").valueAsDate = new Date();
@@ -1492,6 +1542,7 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   Object.keys(state.autoFacts).forEach(k => state.autoFacts[k] = null);
   state.market = null;
   document.querySelectorAll("input,textarea").forEach(el => { if (el.id !== "tradeDate") el.value = ""; });
+  document.getElementById("transactionAdjustment").value = "2.00";
   document.querySelectorAll("select").forEach(el => el.selectedIndex = 0);
   strategy.disabled = true;
   document.getElementById("strategyModule").hidden = true;
@@ -1527,8 +1578,21 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     },
     plan: {
       name: document.getElementById("plan").value,
+      planPercent: number("planPercent"),
+      transactionAdjustment: number("transactionAdjustment"),
+      entryTransactionValue: (() => {
+        const entry=number("entryPrice"), contracts=number("contracts");
+        return entry!==null && contracts!==null ? entry*100*contracts : null;
+      })(),
       targetDollar: number("targetDollar"),
-      planPercent: number("planPercent")
+      targetTransactionValue: (() => {
+        const entry=number("entryPrice"), contracts=number("contracts"), pct=number("planPercent"), adj=number("transactionAdjustment") ?? 0;
+        return entry!==null && contracts!==null && pct!==null ? entry*100*contracts*(1+pct/100)+adj : null;
+      })(),
+      targetOptionPrice: (() => {
+        const entry=number("entryPrice"), contracts=number("contracts"), pct=number("planPercent"), adj=number("transactionAdjustment") ?? 0;
+        return entry!==null && contracts!==null && contracts>0 && pct!==null ? (entry*100*contracts*(1+pct/100)+adj)/(100*contracts) : null;
+      })()
     },
     tradeNotes: document.getElementById("tradeNotes").value
   };
