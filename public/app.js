@@ -1,3 +1,48 @@
+const i18n = {
+  en: {
+    preTradeMethodology:"PRE-TRADE METHODOLOGY", completeMethodology:"Complete the methodology before placing a trade.",
+    ticker:"Ticker", date:"Date", priceRange:"Price Range", optional:"Optional", loadMarketData:"Load Market Data", enterTickerLoad:"Enter a ticker and load market data.",
+    preflightWatch:"PRE-FLIGHT WATCH", watchlistScanner:"Watchlist Scanner", watchHelp:"Check one ticker at a time for objective events. This keeps usage inside the current Twelve Data limits.", manualScan:"Manual scan", add:"Add", addTicker:"Add ticker (NVDA)",
+    liveMarketData:"LIVE / MARKET DATA", latestPrice:"Latest price", exchange:"Exchange", gapVsPrevClose:"Gap vs prev close", volume:"Volume", session:"Session", open:"Open", high:"High", low:"Low", previousClose:"Previous close",
+    dailyMovingAverages:"Daily moving averages", dailyBollinger:"Daily Bollinger 20 / 2", upper:"Upper", midpoint:"Midpoint", lower:"Lower", source:"Source",
+    marketCalendar:"MARKET CALENDAR", macroEventChecks:"Macro / Event Checks", noExtraApi:"No extra API credits", federalReserve:"Federal Reserve", nextFomc:"Next FOMC meeting", daysAway:"Days away", tradeDateStatus:"Trade date status", earnings:"Earnings", upcomingEarnings:"Upcoming earnings", automation:"Automation",
+    step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
+    disclaimer:"PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.",
+    notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"${t("courseRemaining")}",
+    gapUp:"Gap up", gapDown:"Gap down", priceCrossAboveMA20:"Price crossed above MA20", priceCrossBelowMA20:"Price crossed below MA20", ma20CrossAbove40:"MA20 crossed above MA40", ma20CrossBelow40:"MA20 crossed below MA40", priceCrossAboveMid:"Price crossed above Bollinger midpoint", priceCrossBelowMid:"Price crossed below Bollinger midpoint", nearMid:"Price within 0.5% of Bollinger midpoint"
+  },
+  es: {
+    preTradeMethodology:"METODOLOGÍA PRE-TRADE", completeMethodology:"Completa la metodología antes de colocar una operación.",
+    ticker:"Ticker", date:"Fecha", priceRange:"Rango de precio", optional:"Opcional", loadMarketData:"Cargar datos de mercado", enterTickerLoad:"Ingresa un ticker y carga los datos de mercado.",
+    preflightWatch:"PRE-FLIGHT WATCH", watchlistScanner:"Escáner de Watchlist", watchHelp:"Revisa un ticker a la vez para detectar condiciones objetivas. Esto mantiene el uso dentro de los límites actuales de Twelve Data.", manualScan:"Escaneo manual", add:"Agregar", addTicker:"Agregar ticker (NVDA)",
+    liveMarketData:"DATOS DE MERCADO / EN VIVO", latestPrice:"Último precio", exchange:"Bolsa", gapVsPrevClose:"Gap vs cierre previo", volume:"Volumen", session:"Sesión", open:"Apertura", high:"Máximo", low:"Mínimo", previousClose:"Cierre previo",
+    dailyMovingAverages:"Medias móviles diarias", dailyBollinger:"Bollinger diario 20 / 2", upper:"Superior", midpoint:"Punto medio", lower:"Inferior", source:"Fuente",
+    marketCalendar:"CALENDARIO DE MERCADO", macroEventChecks:"Revisión Macro / Eventos", noExtraApi:"Sin créditos API adicionales", federalReserve:"Reserva Federal", nextFomc:"Próxima reunión FOMC", daysAway:"Días restantes", tradeDateStatus:"Estado de la fecha", earnings:"Earnings", upcomingEarnings:"Próximos earnings", automation:"Automatización",
+    step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
+    disclaimer:"PreFlight registra el cumplimiento de la metodología. No recomienda comprar, vender ni colocar una operación.",
+    notChecked:"Aún no revisado", checking:"Revisando…", noEvent:"No se detectó ningún evento monitoreado", check:"Revisar", autoChecks:"chequeos auto", visualReview:"REVISIÓN VISUAL", developing:"DESARROLLANDO", autoAssisted:"AUTO ASISTIDO", courseRemaining:"condición(es) del curso todavía requieren revisión visual/calibrada.",
+    gapUp:"Gap al alza", gapDown:"Gap a la baja", priceCrossAboveMA20:"Precio cruzó por encima de MA20", priceCrossBelowMA20:"Precio cruzó por debajo de MA20", ma20CrossAbove40:"MA20 cruzó por encima de MA40", ma20CrossBelow40:"MA20 cruzó por debajo de MA40", priceCrossAboveMid:"Precio cruzó por encima del punto medio de Bollinger", priceCrossBelowMid:"Precio cruzó por debajo del punto medio de Bollinger", nearMid:"Precio dentro de 0.5% del punto medio de Bollinger"
+  }
+};
+let currentLang = localStorage.getItem("preflightLang") || "en";
+function t(key){ return i18n[currentLang]?.[key] || i18n.en[key] || key; }
+function applyLanguage() {
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll("[data-i18n]").forEach(el => { const k=el.dataset.i18n; el.textContent=t(k); });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder=t(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll(".lang-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.lang===currentLang));
+  renderWatchlist();
+  renderChecklist();
+  updateStatus();
+}
+document.addEventListener("click", e => {
+  const btn=e.target.closest(".lang-btn");
+  if(!btn) return;
+  currentLang=btn.dataset.lang;
+  localStorage.setItem("preflightLang",currentLang);
+  applyLanguage();
+});
+
 const coreItems = [
   { id: "fed", title: "FED meeting", detail: "Calendar context for the selected trade date.", mode: "auto" },
   { id: "earnings", title: "Earnings", detail: "Confirm whether company earnings are relevant to the trade window.", mode: "manual" },
@@ -327,13 +372,13 @@ function detectWatchEvents(data) {
       if (Number(prevA) >= Number(prevB) && Number(nowA) < Number(nowB)) events.push(label + " · " + downText);
     };
 
-    cross(p, pma.ma20, c, ma.ma20, "Price crossed above MA20", "Price crossed below MA20");
-    cross(pma.ma20, pma.ma40, ma.ma20, ma.ma40, "MA20 crossed above MA40", "MA20 crossed below MA40");
-    cross(p, pbb.middle, c, bb.middle, "Price crossed above Bollinger midpoint", "Price crossed below Bollinger midpoint");
+    cross(p, pma.ma20, c, ma.ma20, t("priceCrossAboveMA20"), t("priceCrossBelowMA20"));
+    cross(pma.ma20, pma.ma40, ma.ma20, ma.ma40, t("ma20CrossAbove40"), t("ma20CrossBelow40"));
+    cross(p, pbb.middle, c, bb.middle, t("priceCrossAboveMid"), t("priceCrossBelowMid"));
 
     if (Number.isFinite(Number(bb.middle)) && Number.isFinite(c)) {
       const distance = Math.abs(((c - Number(bb.middle)) / Number(bb.middle)) * 100);
-      if (distance <= 0.5) events.push(label + " · Price within 0.5% of Bollinger midpoint");
+      if (distance <= 0.5) events.push(label + " · " + t("nearMid"));
     }
   };
 
@@ -343,7 +388,7 @@ function detectWatchEvents(data) {
 
   const gap = Number(data.gapPct);
   if (Number.isFinite(gap) && Math.abs(gap) >= 0.5) {
-    events.push("Session · " + (gap > 0 ? "Gap up " : "Gap down ") + (gap >= 0 ? "+" : "") + gap.toFixed(2) + "%");
+    events.push("Session · " + (gap > 0 ? t("gapUp") + " " : t("gapDown") + " ") + (gap >= 0 ? "+" : "") + gap.toFixed(2) + "%");
   }
   return [...new Set(events)];
 }
@@ -357,6 +402,22 @@ function crossedBelow(prevValue, prevReference, value, reference) {
   return [prevValue, prevReference, value, reference].every(v => Number.isFinite(Number(v))) &&
     Number(prevValue) >= Number(prevReference) && Number(value) < Number(reference);
 }
+
+const strategyWatchNames = {
+  E1:{en:"Trend change upward",es:"Cambio de tendencia al alza"},
+  E2:{en:"Trend change downward",es:"Cambio de tendencia a la baja"},
+  E3:{en:"Midpoint bounce · bearish trend",es:"Rebote en punto medio · tendencia a la baja"},
+  E4:{en:"Midpoint bounce · bullish trend",es:"Rebote en punto medio · tendencia al alza"},
+  E5:{en:"Sideways · open above Bollinger",es:"Lateral · apertura fuera de Bollinger al alza"},
+  E6:{en:"Sideways · open below Bollinger",es:"Lateral · apertura fuera de Bollinger a la baja"},
+  E7:{en:"Magnet Effect · bearish trend",es:"Efecto Imán · tendencia bajista"},
+  E8:{en:"Magnet Effect · bullish trend",es:"Efecto Imán · tendencia alcista"},
+  E9:{en:"Trend change upward · Bollinger 15m",es:"Cambio de tendencia al alza · Bollinger 15m"},
+  E10:{en:"Trend change downward · Bollinger 15m",es:"Cambio de tendencia a la baja · Bollinger 15m"},
+  E11:{en:"Medium-term sideways breakout upward",es:"Lateral al alza · mediano plazo"},
+  E12:{en:"Medium-term sideways breakout downward",es:"Lateral a la baja · mediano plazo"}
+};
+function swName(code,fallback){ return strategyWatchNames[code]?.[currentLang] || fallback; }
 
 function strategyWatch(data) {
   const tf15 = data.timeframes?.min15 || {};
@@ -384,7 +445,7 @@ function strategyWatch(data) {
     if (matched.length < 2 && ratio < 0.75) return;
     const level = ratio >= 0.75 && matched.length >= 2 ? "VISUAL REVIEW" : "DEVELOPING";
     results.push({
-      code, label, level,
+      code, label: swName(code,label), level,
       matched: matched.length,
       known: known.length,
       visualRemaining,
@@ -534,14 +595,14 @@ function renderWatchlist() {
     const row = document.createElement("div");
     row.className = "watch-row";
     const eventHtml = !result
-      ? '<span class="watch-state">Not checked yet</span>'
+      ? '<span class="watch-state">' + t("notChecked") + '</span>'
       : result.loading
-        ? '<span class="watch-state">Checking…</span>'
+        ? '<span class="watch-state">' + t("checking") + '</span>'
         : result.error
           ? '<span class="watch-state bad">' + result.error + '</span>'
           : result.events.length
             ? result.events.map(x => '<span class="watch-event">' + x + '</span>').join("")
-            : '<span class="watch-state">No tracked event detected</span>';
+            : '<span class="watch-state">' + t("noEvent") + '</span>';
     row.innerHTML = `
       <div class="watch-symbol">
         <strong>${symbol}</strong>
@@ -555,12 +616,12 @@ function renderWatchlist() {
               <details class="strategy-watch-item">
                 <summary>
                   <span class="strategy-watch-code">${s.code}</span>
-                  <span>${s.level}</span>
-                  <strong>${s.matched}/${s.known} auto checks</strong>
+                  <span>${s.level === "VISUAL REVIEW" ? t("visualReview") : t("developing")}</span>
+                  <strong>${s.matched}/${s.known} ${t("autoChecks")}</strong>
                 </summary>
                 <div class="strategy-watch-detail">
                   <div class="strategy-watch-title">${s.label}</div>
-                  ${s.details.map(d => `<div class="strategy-watch-line ${d.match ? "hit" : "miss"}">${d.match ? "✓" : "○"} ${d.text}${d.assisted ? ' <em>AUTO ASSISTED</em>' : ''}</div>`).join("")}
+                  ${s.details.map(d => `<div class="strategy-watch-line ${d.match ? "hit" : "miss"}">${d.match ? "✓" : "○"} ${d.text}${d.assisted ? ' <em>' + t("autoAssisted") + '</em>' : ''}</div>`).join("")}
                   <div class="strategy-watch-visual">${s.visualRemaining} course condition(s) still require visual/calibrated review.</div>
                 </div>
               </details>
@@ -568,7 +629,7 @@ function renderWatchlist() {
           </div>` : ""}
       </div>
       <div class="watch-actions">
-        <button class="secondary watch-check" type="button" data-symbol="${symbol}">Check</button>
+        <button class="secondary watch-check" type="button" data-symbol="${symbol}">${t("check")}</button>
         <button class="watch-remove" type="button" data-remove="${symbol}" aria-label="Remove ${symbol}">×</button>
       </div>
     `;
@@ -1102,6 +1163,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
 
 renderChecklist();
 updateMetrics();
+applyLanguage();
 
 document.addEventListener("click", e => {
   const toggle = e.target.closest(".details-toggle");
