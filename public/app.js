@@ -303,6 +303,19 @@ const strategyDefinitions = {
       "Cambiar a 15 minutos y esperar que el precio comience a rebotar desde esa zona.",
       "En 1 Hora, esperar una vela de confirmación bajista."
     ]
+  },
+  E4: {
+    title: "Rebote en punto medio · tendencia al alza",
+    meta: "Bollinger · Diario alcista · 1 hora bajista · confirmación: 15 minutos",
+    direction: "Course-defined setup direction: bullish / call. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "En Bollinger, la temporalidad Diario debe encontrarse en una tendencia claramente alcista.",
+      "En Bollinger, la temporalidad 1 Hora debe encontrarse en una tendencia claramente bajista.",
+      "El precio debe venir cayendo y acercarse al punto medio del Diario, equivalente a la media móvil de 20 períodos, usada como referencia del punto de rebote.",
+      "Cuando el precio toca esa marca, verificar que no cruce el punto medio sino que lo respete.",
+      "Cambiar a 15 minutos y esperar que el precio comience a rebotar desde esa zona.",
+      "En 1 Hora, esperar una vela de confirmación alcista."
+    ]
   }
 };
 
