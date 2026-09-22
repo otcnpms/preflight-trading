@@ -278,6 +278,18 @@ const strategyDefinitions = {
       "En la temporalidad de 1 hora, el precio rompe la media móvil de 20 períodos y termina con una vela de confirmación alcista.",
       "Al cambiar a 15 minutos, la tendencia debe mostrarse totalmente alcista."
     ]
+  },
+  E2: {
+    title: "Cambio de tendencia a la baja",
+    meta: "Bollinger · temporalidad principal: 1 hora · confirmación: 15 minutos",
+    direction: "Course-defined setup direction: bearish / put. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "Trazar una línea de tendencia sobre la trayectoria alcista, bordeando levemente por debajo la mayor cantidad de puntos posibles.",
+      "El precio rompe la línea de tendencia alcista.",
+      "La ruptura puede ocurrir durante el día o en forma de salto (gap).",
+      "En la temporalidad de 1 hora, el precio rompe la media móvil de 20 períodos y termina con una vela de confirmación bajista.",
+      "Al cambiar a 15 minutos, la tendencia debe mostrarse totalmente bajista."
+    ]
   }
 };
 
