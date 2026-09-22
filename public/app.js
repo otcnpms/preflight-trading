@@ -411,6 +411,18 @@ const strategyDefinitions = {
       "En Bollinger de 15 minutos, la primera vela debe quedar completamente fuera del oscilador.",
       "Cuando comience a formarse la vela en el indicador de volumen, debe cruzar la línea roja del indicador Worden Stochastics; el material del curso lo usa como confirmación de compra de contratos put."
     ]
+  },
+  E9: {
+    title: "Cambio de tendencia al alza · Bollinger 15 minutos",
+    meta: "Bollinger · temporalidad: 15 minutos · gap + punto medio + línea de tendencia",
+    direction: "Course-defined setup direction: bullish / call. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "En 15 minutos, la tendencia debe ser bajista o lateral.",
+      "Trazar una línea de tendencia desde el punto máximo del día hasta el mínimo, por la parte superior del precio, bordeando la mayor cantidad de puntos posibles.",
+      "El precio debe abrir con un salto al alza, rompiendo el punto medio de Bollinger y la línea de tendencia.",
+      "Si al abrir se expande la volatilidad inmediatamente, el material del curso considera la condición válida para la estrategia.",
+      "Según la metodología del curso, una vez cumplidos los requisitos se contempla tomar posición en CALL."
+    ]
   }
 };
 
