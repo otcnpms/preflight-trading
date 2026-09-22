@@ -435,6 +435,18 @@ const strategyDefinitions = {
       "Si al abrir se expande la volatilidad inmediatamente, el material del curso considera la condición válida para la estrategia.",
       "Según la metodología del curso, una vez cumplidos los requisitos se contempla tomar posición en PUT."
     ]
+  },
+  E11: {
+    title: "Cambio de tendencia lateral al alza a mediano plazo",
+    meta: "Medias móviles 20 / 40 / 100 / 200 · canal lateral · Bollinger 1 hora",
+    direction: "Course-defined setup direction: bullish / call. PreFlight records the course methodology; it does not recommend a trade.",
+    requirements: [
+      "Las medias móviles de 20, 40, 100 y 200 períodos deben mostrarse laterales o entrelazadas dentro de un canal lateral, con predominio de las medias de 100 y 200 períodos.",
+      "El precio debe permanecer dentro de ese canal lateral durante 10 días o más; el material indica que puede extenderse por más de 30 días.",
+      "Debe aparecer una señal alcista que saque al precio del canal, ya sea mediante un salto (gap), una vela alcista o una vela extremadamente alcista.",
+      "Esperar una vela final de confirmación alcista.",
+      "La confirmación debe observarse en Bollinger Bands de 1 Hora con alta volatilidad."
+    ]
   }
 };
 
