@@ -8,7 +8,7 @@ const i18n = {
     marketCalendar:"MARKET CALENDAR", macroEventChecks:"Macro / Event Checks", noExtraApi:"No extra API credits", federalReserve:"Federal Reserve", nextFomc:"Next FOMC meeting", daysAway:"Days away", tradeDateStatus:"Trade date status", earnings:"Earnings", upcomingEarnings:"Upcoming earnings", automation:"Automation",
     step1:"STEP 1", corePreflight:"Core Pre-Flight", step2:"STEP 2", optionalStrategy:"Optional Strategy Setup", notRequired:"Not required", step3:"STEP 3", optionDetails:"Option Details", step4:"STEP 4", positionPlan:"Position Plan", finalReview:"FINAL REVIEW", reset:"Reset", savePreflight:"Save Pre-Flight",
     disclaimer:"PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.",
-    notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"course condition(s) still require visual/calibrated review.",
+    notChecked:"Not checked yet", checking:"Checking…", noEvent:"No tracked event detected", check:"Check", autoChecks:"auto checks", visualReview:"VISUAL REVIEW", developing:"DEVELOPING", autoAssisted:"AUTO ASSISTED", courseRemaining:"course condition(s) still require visual/calibrated review.", lastScan:"Last scan", savedSnapshot:"SAVED SNAPSHOT", rescan:"Rescan",
     gapUp:"Gap up", gapDown:"Gap down", priceCrossAboveMA20:"Price crossed above MA20", priceCrossBelowMA20:"Price crossed below MA20", ma20CrossAbove40:"MA20 crossed above MA40", ma20CrossBelow40:"MA20 crossed below MA40", priceCrossAboveMid:"Price crossed above Bollinger midpoint", priceCrossBelowMid:"Price crossed below Bollinger midpoint", nearMid:"Price within 0.5% of Bollinger midpoint"
   },
   es: {
@@ -20,7 +20,7 @@ const i18n = {
     marketCalendar:"CALENDARIO DE MERCADO", macroEventChecks:"Revisión Macro / Eventos", noExtraApi:"Sin créditos API adicionales", federalReserve:"Reserva Federal", nextFomc:"Próxima reunión FOMC", daysAway:"Días restantes", tradeDateStatus:"Estado de la fecha", earnings:"Earnings", upcomingEarnings:"Próximos earnings", automation:"Automatización",
     step1:"PASO 1", corePreflight:"Pre-Flight principal", step2:"PASO 2", optionalStrategy:"Configuración de estrategia opcional", notRequired:"No requerido", step3:"PASO 3", optionDetails:"Detalles de la opción", step4:"PASO 4", positionPlan:"Plan de posición", finalReview:"REVISIÓN FINAL", reset:"Reiniciar", savePreflight:"Guardar Pre-Flight",
     disclaimer:"PreFlight registra el cumplimiento de la metodología. No recomienda comprar, vender ni colocar una operación.",
-    notChecked:"Aún no revisado", checking:"Revisando…", noEvent:"No se detectó ningún evento monitoreado", check:"Revisar", autoChecks:"chequeos auto", visualReview:"REVISIÓN VISUAL", developing:"DESARROLLANDO", autoAssisted:"AUTO ASISTIDO", courseRemaining:"condición(es) del curso todavía requieren revisión visual/calibrada.",
+    notChecked:"Aún no revisado", checking:"Revisando…", noEvent:"No se detectó ningún evento monitoreado", check:"Revisar", autoChecks:"chequeos auto", visualReview:"REVISIÓN VISUAL", developing:"DESARROLLANDO", autoAssisted:"AUTO ASISTIDO", courseRemaining:"condición(es) del curso todavía requieren revisión visual/calibrada.", lastScan:"Último escaneo", savedSnapshot:"SNAPSHOT GUARDADO", rescan:"Revisar de nuevo",
     gapUp:"Gap al alza", gapDown:"Gap a la baja", priceCrossAboveMA20:"Precio cruzó por encima de MA20", priceCrossBelowMA20:"Precio cruzó por debajo de MA20", ma20CrossAbove40:"MA20 cruzó por encima de MA40", ma20CrossBelow40:"MA20 cruzó por debajo de MA40", priceCrossAboveMid:"Precio cruzó por encima del punto medio de Bollinger", priceCrossBelowMid:"Precio cruzó por debajo del punto medio de Bollinger", nearMid:"Precio dentro de 0.5% del punto medio de Bollinger"
   }
 };
@@ -577,10 +577,21 @@ function strategyWatch(data) {
   return results.sort((a,b) => (b.matched/b.known) - (a.matched/a.known) || b.matched-a.matched).slice(0,3);
 }
 let watchSymbols = JSON.parse(localStorage.getItem("preflightWatchlist") || "[]");
-const watchResults = {};
+let watchResults = JSON.parse(localStorage.getItem("preflightWatchResults") || "{}");
 
 function saveWatchlist() {
   localStorage.setItem("preflightWatchlist", JSON.stringify(watchSymbols));
+}
+function saveWatchResults() {
+  localStorage.setItem("preflightWatchResults", JSON.stringify(watchResults));
+}
+function formatScanTime(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(currentLang === "es" ? "es-US" : "en-US", {
+    month:"short", day:"numeric", hour:"numeric", minute:"2-digit"
+  });
 }
 
 function renderWatchlist() {
@@ -607,6 +618,7 @@ function renderWatchlist() {
       <div class="watch-symbol">
         <strong>${symbol}</strong>
         <span>${result?.price ? money(result.price) : "—"}</span>
+        ${result?.checkedAt && !result.loading ? `<small class="watch-saved">${t("savedSnapshot")} · ${formatScanTime(result.checkedAt)}</small>` : ""}
       </div>
       <div>
         <div class="watch-events">${eventHtml}</div>
@@ -629,7 +641,7 @@ function renderWatchlist() {
           </div>` : ""}
       </div>
       <div class="watch-actions">
-        <button class="secondary watch-check" type="button" data-symbol="${symbol}">${t("check")}</button>
+        <button class="secondary watch-check" type="button" data-symbol="${symbol}">${result?.checkedAt ? t("rescan") : t("check")}</button>
         <button class="watch-remove" type="button" data-remove="${symbol}" aria-label="Remove ${symbol}">×</button>
       </div>
     `;
@@ -638,7 +650,8 @@ function renderWatchlist() {
 }
 
 async function checkWatchSymbol(symbol) {
-  watchResults[symbol] = { loading: true };
+  const previous = watchResults[symbol] || null;
+  watchResults[symbol] = { ...(previous || {}), loading: true };
   renderWatchlist();
   try {
     const resp = await fetch("/api/market/" + encodeURIComponent(symbol));
@@ -651,8 +664,12 @@ async function checkWatchSymbol(symbol) {
       checkedAt: new Date().toISOString(),
       strategies: strategyWatch(data)
     };
+    saveWatchResults();
   } catch (err) {
-    watchResults[symbol] = { loading: false, error: err.message || "Scan failed", events: [] };
+    watchResults[symbol] = previous
+      ? { ...previous, loading: false, lastError: err.message || "Scan failed" }
+      : { loading: false, error: err.message || "Scan failed", events: [] };
+    saveWatchResults();
   }
   renderWatchlist();
 }
@@ -683,10 +700,15 @@ document.getElementById("watchList").addEventListener("click", e => {
     watchSymbols = watchSymbols.filter(x => x !== remove.dataset.remove);
     delete watchResults[remove.dataset.remove];
     saveWatchlist();
+    saveWatchResults();
     renderWatchlist();
   }
 });
 
+Object.keys(watchResults).forEach(symbol => {
+  if (watchResults[symbol]?.loading) watchResults[symbol].loading = false;
+});
+saveWatchResults();
 renderWatchlist();
 
 document.getElementById("loadMarketBtn").addEventListener("click", loadMarketData);
