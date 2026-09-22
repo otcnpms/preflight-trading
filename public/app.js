@@ -395,11 +395,57 @@ function number(id) {
 }
 
 function updateMetrics() {
-  const bid = number("bid"), ask = number("ask"), spot = number("spotPrice"), strike = number("strikePrice");
-  document.getElementById("spread").textContent = bid !== null && ask !== null ? (ask - bid).toFixed(2) : "—";
-  document.getElementById("strikeDistance").textContent = spot !== null && strike !== null ? (strike - spot).toFixed(2) : "—";
+  const bid = number("bid");
+  const ask = number("ask");
+  const spot = number("spotPrice");
+  const strike = number("strikePrice");
+  const contracts = number("contracts");
+  const entry = number("entryPrice");
+  const type = document.getElementById("optionType").value;
+  const expiration = document.getElementById("expiration").value;
+  const tradeDate = document.getElementById("tradeDate").value;
+
+  const spread = bid !== null && ask !== null ? ask - bid : null;
+  const mid = bid !== null && ask !== null ? (bid + ask) / 2 : null;
+  const distance = spot !== null && strike !== null ? strike - spot : null;
+  const distancePct = distance !== null && spot ? (distance / spot) * 100 : null;
+
+  document.getElementById("spread").textContent = spread !== null ? spread.toFixed(2) : "—";
+  document.getElementById("midPrice").textContent = mid !== null ? money(mid) : "—";
+  document.getElementById("spreadPct").textContent = spread !== null && mid ? ((spread / mid) * 100).toFixed(1) + "%" : "—";
+  document.getElementById("strikeDistance").textContent = distance !== null ? `${distance >= 0 ? "+" : ""}${distance.toFixed(2)}` : "—";
+  document.getElementById("strikeDistancePct").textContent = distancePct !== null ? `${distancePct >= 0 ? "+" : ""}${distancePct.toFixed(2)}%` : "—";
+
+  let moneyness = "—";
+  if (spot !== null && strike !== null && type) {
+    const diff = Math.abs(spot - strike);
+    const atmThreshold = Math.max(0.5, spot * 0.0025);
+    if (diff <= atmThreshold) {
+      moneyness = "ATM";
+    } else if (type === "CALL") {
+      moneyness = strike < spot ? "ITM" : "OTM";
+    } else if (type === "PUT") {
+      moneyness = strike > spot ? "ITM" : "OTM";
+    }
+  }
+  document.getElementById("moneyness").textContent = moneyness;
+
+  let dte = "—";
+  if (expiration && tradeDate) {
+    const start = localDateOnly(tradeDate);
+    const end = localDateOnly(expiration);
+    dte = String(Math.round((end - start) / 86400000));
+  }
+  document.getElementById("dte").textContent = dte;
+
+  const costBasis = entry !== null ? entry : mid;
+  document.getElementById("estimatedCost").textContent =
+    contracts !== null && costBasis !== null ? money(costBasis * 100 * contracts) : "—";
 }
-["bid","ask","spotPrice","strikePrice"].forEach(id => document.getElementById(id).addEventListener("input", updateMetrics));
+["bid","ask","spotPrice","strikePrice","contracts","entryPrice","expiration","optionType","tradeDate"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener(el.tagName === "SELECT" || el.type === "date" ? "change" : "input", updateMetrics);
+});
 
 document.getElementById("tradeDate").valueAsDate = new Date();
 document.getElementById("tradeDate").addEventListener("change", updateFedContext);
