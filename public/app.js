@@ -1,15 +1,19 @@
 const coreItems = [
-  { id: "fed", title: "FED meeting", detail: "Check whether a Federal Reserve meeting/event is relevant to the trade window." },
-  { id: "earnings", title: "Earnings", detail: "Check whether company earnings are relevant to the trade window." },
-  { id: "bollinger", title: "Bollinger context", detail: "Review 15m / 1H / Daily and daily midpoint support/resistance context." },
-  { id: "movingAverages", title: "Moving averages", detail: "Review floors/ceilings and the 1H / Daily context." },
-  { id: "trendline", title: "Trendline / support / resistance", detail: "Identify relevant trendline breaks and key levels." },
-  { id: "gap", title: "Gap context", detail: "Check for gap up / gap down and its relevance." },
-  { id: "bidAsk", title: "Bid / Ask", detail: "Review liquidity and spread before selecting the contract." },
-  { id: "spotStrike", title: "Spot / Strike / Expiration", detail: "Confirm spot price, strike relationship, and expiration." }
+  { id: "fed", title: "FED meeting", detail: "Calendar context for the selected trade date.", mode: "auto" },
+  { id: "earnings", title: "Earnings", detail: "Confirm whether company earnings are relevant to the trade window.", mode: "manual" },
+  { id: "bollinger", title: "Bollinger context", detail: "15m / 1H / Daily position versus Bollinger midpoint and bands.", mode: "auto" },
+  { id: "movingAverages", title: "Moving averages", detail: "15m / 1H / Daily price position versus MA 20 / 40 / 100 / 200.", mode: "auto" },
+  { id: "trendline", title: "Trendline / support / resistance", detail: "Visual review of trendlines and key support/resistance.", mode: "manual" },
+  { id: "gap", title: "Gap context", detail: "Gap up/down calculated from session open versus previous close.", mode: "auto" },
+  { id: "bidAsk", title: "Bid / Ask", detail: "Spread and midpoint calculated from the selected option contract.", mode: "auto" },
+  { id: "spotStrike", title: "Spot / Strike / Expiration", detail: "Spot/strike relationship and DTE calculated from contract details.", mode: "auto" }
 ];
 
-const state = { checks: Object.fromEntries(coreItems.map(x => [x.id, null])), market: null };
+const state = {
+  checks: Object.fromEntries(coreItems.filter(x => x.mode === "manual").map(x => [x.id, null])),
+  autoFacts: Object.fromEntries(coreItems.filter(x => x.mode === "auto").map(x => [x.id, null])),
+  market: null
+};
 
 const fomcMeetings = [
   { start: "2026-01-27", end: "2026-01-28" },
@@ -61,6 +65,8 @@ function updateFedContext() {
     nextDateEl.textContent = "Schedule not loaded";
     daysAwayEl.textContent = "—";
     statusEl.textContent = "Manual review";
+    state.autoFacts.fed = null;
+    renderChecklist();
     return;
   }
 
@@ -77,6 +83,8 @@ function updateFedContext() {
   } else {
     statusEl.textContent = "No meeting within 3 days";
   }
+  state.autoFacts.fed = statusEl.textContent;
+  renderChecklist();
 }
 
 const list = document.getElementById("coreChecklist");
@@ -99,13 +107,26 @@ function renderChecklist() {
   for (const item of coreItems) {
     const row = document.createElement("div");
     row.className = "check-row";
-    row.innerHTML = `
-      <div><div class="check-title">${item.title}</div><div class="check-detail">${item.detail}</div></div>
-      <div class="segmented" data-id="${item.id}">
-        <button data-value="pass">PASS</button>
-        <button data-value="fail">FAIL</button>
-        <button data-value="manual">MANUAL</button>
-      </div>`;
+    if (item.mode === "auto") {
+      const fact = state.autoFacts[item.id];
+      row.innerHTML = `
+        <div>
+          <div class="check-title">${item.title} <span class="core-mode auto">AUTO</span></div>
+          <div class="check-detail">${item.detail}</div>
+          <div class="auto-fact ${fact ? "available" : ""}">${fact || "Waiting for data"}</div>
+        </div>
+        <div class="auto-check ${fact ? "done" : ""}">${fact ? "✓" : "—"}</div>`;
+    } else {
+      row.innerHTML = `
+        <div>
+          <div class="check-title">${item.title} <span class="core-mode visual">VISUAL</span></div>
+          <div class="check-detail">${item.detail}</div>
+        </div>
+        <div class="segmented" data-id="${item.id}">
+          <button data-value="pass">CONFIRM</button>
+          <button data-value="fail">ISSUE</button>
+        </div>`;
+    }
     list.appendChild(row);
   }
   syncButtons();
@@ -122,21 +143,31 @@ function syncButtons() {
 }
 
 function updateStatus() {
-  const values = Object.values(state.checks);
-  const completed = values.filter(Boolean).length;
-  const hasFailure = values.includes("fail");
-  const allReviewed = completed === coreItems.length;
+  const manualValues = Object.values(state.checks);
+  const manualReviewed = manualValues.filter(Boolean).length;
+  const autoValues = Object.values(state.autoFacts);
+  const autoReady = autoValues.filter(Boolean).length;
+  const hasFailure = manualValues.includes("fail");
+  const allReviewed = manualReviewed === manualValues.length && autoReady === autoValues.length;
   const ready = allReviewed && !hasFailure;
 
-  document.getElementById("coreCounter").textContent = `${completed} / ${coreItems.length} reviewed`;
+  document.getElementById("coreCounter").textContent =
+    `${autoReady} auto · ${manualValues.length - manualReviewed} visual remaining`;
   const badge = document.getElementById("overallStatus");
   badge.textContent = ready ? "METHODOLOGY COMPLETE" : hasFailure ? "REVIEW REQUIRED" : "NOT COMPLETE";
   badge.classList.toggle("ready", ready);
   document.getElementById("saveBtn").disabled = !allReviewed;
-  document.getElementById("finalHeadline").textContent = ready ? "Core Pre-Flight complete" : hasFailure ? "Review failed checks" : "Pre-Flight incomplete";
+  document.getElementById("finalHeadline").textContent = ready ? "Core Pre-Flight complete" : hasFailure ? "Review visual issue" : "Pre-Flight incomplete";
   document.getElementById("finalCopy").textContent = ready
-    ? "All core checks were reviewed with no failed requirement."
-    : hasFailure ? "At least one core requirement is marked FAIL." : "Review every core methodology item before saving.";
+    ? "All available objective checks are populated and visual checks are confirmed."
+    : hasFailure
+      ? "At least one visual methodology check is marked ISSUE."
+      : `${autoValues.length - autoReady} automatic checks and ${manualValues.length - manualReviewed} visual reviews remain.`;
+}
+
+function setAutoFact(id, text) {
+  state.autoFacts[id] = text || null;
+  renderChecklist();
 }
 
 list.addEventListener("click", e => {
@@ -248,8 +279,26 @@ async function loadMarketData() {
     paintTimeframe("tf1h", data.timeframes?.hour1, "tf1hStatus");
     paintTimeframe("tfD", data.timeframes?.daily);
 
+    const tf15 = data.timeframes?.min15;
+    const tf1h = data.timeframes?.hour1;
+    const tfD = data.timeframes?.daily;
+    const allTfAvailable = tf15?.available && tf1h?.available && tfD?.available;
+
+    state.autoFacts.bollinger = allTfAvailable
+      ? `15m: ${bollingerContext(Number(tf15.latest?.close), tf15.bollinger)} · 1H: ${bollingerContext(Number(tf1h.latest?.close), tf1h.bollinger)} · Daily: ${bollingerContext(Number(tfD.latest?.close), tfD.bollinger)}`
+      : null;
+
+    state.autoFacts.movingAverages = allTfAvailable
+      ? `15m: ${maContext(Number(tf15.latest?.close), tf15.movingAverages)} · 1H: ${maContext(Number(tf1h.latest?.close), tf1h.movingAverages)} · Daily: ${maContext(Number(tfD.latest?.close), tfD.movingAverages)}`
+      : null;
+
+    state.autoFacts.gap = gap === null
+      ? null
+      : `${gap > 0 ? "Gap up" : gap < 0 ? "Gap down" : "No gap"} · ${gap >= 0 ? "+" : ""}${gap.toFixed(2)}%`;
+
     if (Number.isFinite(Number(data.price))) document.getElementById("spotPrice").value = Number(data.price).toFixed(2);
     updateMetrics();
+    renderChecklist();
     msg.textContent = `${symbol} loaded. 15m, 1H and Daily context calculated from returned price history.`;
   } catch (err) {
     document.getElementById("marketCard").hidden = true;
@@ -441,6 +490,16 @@ function updateMetrics() {
   const costBasis = entry !== null ? entry : mid;
   document.getElementById("estimatedCost").textContent =
     contracts !== null && costBasis !== null ? money(costBasis * 100 * contracts) : "—";
+
+  state.autoFacts.bidAsk = spread !== null && mid !== null
+    ? `Mid ${money(mid)} · spread ${spread.toFixed(2)} (${((spread / mid) * 100).toFixed(1)}%)`
+    : null;
+
+  state.autoFacts.spotStrike = spot !== null && strike !== null && expiration
+    ? `Spot ${money(spot)} · strike ${money(strike)} · ${moneyness} · ${dte} DTE`
+    : null;
+
+  renderChecklist();
 }
 ["bid","ask","spotPrice","strikePrice","contracts","entryPrice","expiration","optionType","tradeDate"].forEach(id => {
   const el = document.getElementById(id);
@@ -454,6 +513,7 @@ updateFedContext();
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (!confirm("Reset this Pre-Flight?")) return;
   Object.keys(state.checks).forEach(k => state.checks[k] = null);
+  Object.keys(state.autoFacts).forEach(k => state.autoFacts[k] = null);
   state.market = null;
   document.querySelectorAll("input,textarea").forEach(el => { if (el.id !== "tradeDate") el.value = ""; });
   document.querySelectorAll("select").forEach(el => el.selectedIndex = 0);
@@ -473,6 +533,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     priceRange: document.getElementById("priceRange").value,
     marketSnapshot: state.market,
     checks: state.checks,
+    autoFacts: state.autoFacts,
     strategy: strategyPresent.value === "yes" ? strategy.value : null,
     strategyRequirements: strategyPresent.value === "yes" && strategy.value
       ? strategyConfirmations[strategy.value] || []
