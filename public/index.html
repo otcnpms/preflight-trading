@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#07111f" />
+  <title>PreFlight Trading</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">PRE-TRADE METHODOLOGY</p>
+        <h1>PreFlight Trading</h1>
+        <p class="sub">Complete the methodology before placing a trade.</p>
+      </div>
+      <div class="status-pill" id="overallStatus">NOT COMPLETE</div>
+    </header>
+
+    <section class="card setup">
+      <div class="grid three">
+        <label>Ticker<input id="ticker" placeholder="SPY" autocomplete="off" /></label>
+        <label>Date<input id="tradeDate" type="date" /></label>
+        <label>Price Range<input id="priceRange" placeholder="Optional" /></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <p class="step">STEP 1</p>
+          <h2>Core Pre-Flight</h2>
+        </div>
+        <span class="counter" id="coreCounter">0 / 8 complete</span>
+      </div>
+      <div id="coreChecklist" class="checklist"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <p class="step">STEP 2</p>
+          <h2>Optional Strategy Setup</h2>
+        </div>
+        <span class="muted">Not required</span>
+      </div>
+      <div class="grid two">
+        <label>Recognized setup?
+          <select id="strategyPresent">
+            <option value="no">No / Not identified</option>
+            <option value="yes">Yes</option>
+          </select>
+        </label>
+        <label>Strategy
+          <select id="strategy" disabled>
+            <option value="">Select setup</option>
+            <option>E1</option><option>E2</option><option>E3</option><option>E4</option>
+            <option>E5</option><option>E6</option><option>E7</option><option>E8</option>
+            <option>E9</option><option>E10</option><option>E11</option><option>E12</option>
+          </select>
+        </label>
+      </div>
+      <label class="wide">Strategy notes<textarea id="strategyNotes" rows="3" placeholder="Why does this setup appear to match?"></textarea></label>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div><p class="step">STEP 3</p><h2>Option Details</h2></div>
+      </div>
+      <div class="grid four">
+        <label>Type<select id="optionType"><option value="">—</option><option>CALL</option><option>PUT</option></select></label>
+        <label>Expiration<input id="expiration" type="date" /></label>
+        <label>Spot Price<input id="spotPrice" type="number" step="0.01" /></label>
+        <label>Strike Price<input id="strikePrice" type="number" step="0.01" /></label>
+        <label>Bid<input id="bid" type="number" step="0.01" /></label>
+        <label>Ask<input id="ask" type="number" step="0.01" /></label>
+        <label>Contracts<input id="contracts" type="number" min="1" step="1" /></label>
+        <label>Entry Price<input id="entryPrice" type="number" step="0.01" /></label>
+      </div>
+      <div class="metric-row">
+        <div class="metric"><span>Bid / Ask Spread</span><strong id="spread">—</strong></div>
+        <div class="metric"><span>Strike Distance</span><strong id="strikeDistance">—</strong></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div><p class="step">STEP 4</p><h2>Position Plan</h2></div>
+      </div>
+      <div class="grid three">
+        <label>Plan<select id="plan"><option value="">Select</option><option>10%</option><option>35%</option><option>100%</option><option>Other</option></select></label>
+        <label>Target / Profit $<input id="targetDollar" type="number" step="0.01" /></label>
+        <label>Plan %<input id="planPercent" type="number" step="0.01" /></label>
+      </div>
+      <label class="wide">Trade notes<textarea id="tradeNotes" rows="3" placeholder="Context, invalidation, reinforcement notes, etc."></textarea></label>
+    </section>
+
+    <section class="card final-review">
+      <div>
+        <p class="step">FINAL REVIEW</p>
+        <h2 id="finalHeadline">Pre-Flight incomplete</h2>
+        <p id="finalCopy">Complete all required core methodology checks.</p>
+      </div>
+      <div class="actions">
+        <button class="secondary" id="resetBtn">Reset</button>
+        <button class="primary" id="saveBtn" disabled>Save Pre-Flight</button>
+      </div>
+    </section>
+
+    <p class="disclaimer">PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.</p>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
