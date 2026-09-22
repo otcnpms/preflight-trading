@@ -1,0 +1,12 @@
+{
+  "name": "preflight-trading",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pre-trade methodology checklist and journal companion",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
