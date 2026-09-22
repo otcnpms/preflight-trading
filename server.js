@@ -96,17 +96,26 @@ app.get("/api/market/:symbol", async (req, res) => {
 
     function summarize(parsed) {
       const closes = parsed.rows.map(v => v.close);
+      const previousCloses = closes.slice(0, -1);
       return {
         available: parsed.rows.length > 0,
         error: parsed.error,
         latest: parsed.rows.at(-1) || null,
+        previous: parsed.rows.at(-2) || null,
         movingAverages: {
           ma20: sma(closes, 20),
           ma40: sma(closes, 40),
           ma100: sma(closes, 100),
           ma200: sma(closes, 200)
         },
-        bollinger: bollinger(closes, 20, 2)
+        previousMovingAverages: {
+          ma20: sma(previousCloses, 20),
+          ma40: sma(previousCloses, 40),
+          ma100: sma(previousCloses, 100),
+          ma200: sma(previousCloses, 200)
+        },
+        bollinger: bollinger(closes, 20, 2),
+        previousBollinger: bollinger(previousCloses, 20, 2)
       };
     }
 
