@@ -2,7 +2,7 @@ const i18n = {
   en: {
     preTradeMethodology:"PRE-TRADE METHODOLOGY", completeMethodology:"Complete the methodology before placing a trade.",
     ticker:"Ticker", date:"Date", priceRange:"Price Range", optional:"Optional", loadMarketData:"Load Market Data", enterTickerLoad:"Enter a ticker and load market data.",
-    preflightWatch:"PRE-FLIGHT WATCH", watchlistScanner:"Watchlist Scanner", watchHelp:"Check one ticker at a time for objective events. This keeps usage inside the current Twelve Data limits.", manualScan:"Manual scan", add:"Add", addTicker:"Add ticker (NVDA)", watchBoard:"Watchlist", newWatchlist:"New Watchlist", selectWatchStock:"Select a stock", selectWatchStockHint:"Choose a ticker on the left to see its strategies and scan details.", quickOptions:"Go to Options", boardFull:"This watchlist already has 12 stocks.",
+    preflightWatch:"PRE-FLIGHT WATCH", watchlistScanner:"Watchlist Scanner", watchHelp:"Check one ticker at a time for objective events. This keeps usage inside the current Twelve Data limits.", manualScan:"Manual scan", add:"Add", addTicker:"Add ticker (NVDA)", watchBoard:"Watchlist", newWatchlist:"New Watchlist", createWatchlist:"Create Watchlist", watchlistName:"Watchlist name", watchlistNamePlaceholder:"e.g. Tech Momentum", cancel:"Cancel", create:"Create", watchlistDuplicate:"A watchlist with that name already exists.", selectWatchStock:"Select a stock", selectWatchStockHint:"Choose a ticker on the left to see its strategies and scan details.", quickOptions:"Go to Options", boardFull:"This watchlist already has 12 stocks.",
     liveMarketData:"LIVE / MARKET DATA", latestPrice:"Latest price", exchange:"Exchange", gapVsPrevClose:"Gap vs prev close", volume:"Volume", session:"Session", open:"Open", high:"High", low:"Low", previousClose:"Previous close",
     dailyMovingAverages:"Daily moving averages", dailyBollinger:"Daily Bollinger 20 / 2", upper:"Upper", midpoint:"Midpoint", lower:"Lower", source:"Source",
     marketCalendar:"MARKET CALENDAR", macroEventChecks:"Macro / Event Checks", noExtraApi:"No extra API credits", federalReserve:"Federal Reserve", nextFomc:"Next FOMC meeting", daysAway:"Days away", tradeDateStatus:"Trade date status", earnings:"Earnings", upcomingEarnings:"Upcoming earnings", automation:"Automation",
@@ -14,7 +14,7 @@ const i18n = {
   es: {
     preTradeMethodology:"METODOLOGÍA PRE-TRADE", completeMethodology:"Completa la metodología antes de colocar una operación.",
     ticker:"Ticker", date:"Fecha", priceRange:"Rango de precio", optional:"Opcional", loadMarketData:"Cargar datos de mercado", enterTickerLoad:"Ingresa un ticker y carga los datos de mercado.",
-    preflightWatch:"PRE-FLIGHT WATCH", watchlistScanner:"Escáner de Watchlist", watchHelp:"Revisa un ticker a la vez para detectar condiciones objetivas. Esto mantiene el uso dentro de los límites actuales de Twelve Data.", manualScan:"Escaneo manual", add:"Agregar", addTicker:"Agregar ticker (NVDA)", watchBoard:"Watchlist", newWatchlist:"Nueva Watchlist", selectWatchStock:"Selecciona una acción", selectWatchStockHint:"Elige un ticker a la izquierda para ver sus estrategias y detalles del escaneo.", quickOptions:"Ir a Opciones", boardFull:"Esta watchlist ya tiene 12 acciones.",
+    preflightWatch:"PRE-FLIGHT WATCH", watchlistScanner:"Escáner de Watchlist", watchHelp:"Revisa un ticker a la vez para detectar condiciones objetivas. Esto mantiene el uso dentro de los límites actuales de Twelve Data.", manualScan:"Escaneo manual", add:"Agregar", addTicker:"Agregar ticker (NVDA)", watchBoard:"Watchlist", newWatchlist:"Nueva Watchlist", createWatchlist:"Crear Watchlist", watchlistName:"Nombre de la watchlist", watchlistNamePlaceholder:"ej. Tecnología Momentum", cancel:"Cancelar", create:"Crear", watchlistDuplicate:"Ya existe una watchlist con ese nombre.", selectWatchStock:"Selecciona una acción", selectWatchStockHint:"Elige un ticker a la izquierda para ver sus estrategias y detalles del escaneo.", quickOptions:"Ir a Opciones", boardFull:"Esta watchlist ya tiene 12 acciones.",
     liveMarketData:"DATOS DE MERCADO / EN VIVO", latestPrice:"Último precio", exchange:"Bolsa", gapVsPrevClose:"Gap vs cierre previo", volume:"Volumen", session:"Sesión", open:"Apertura", high:"Máximo", low:"Mínimo", previousClose:"Cierre previo",
     dailyMovingAverages:"Medias móviles diarias", dailyBollinger:"Bollinger diario 20 / 2", upper:"Superior", midpoint:"Punto medio", lower:"Inferior", source:"Fuente",
     marketCalendar:"CALENDARIO DE MERCADO", macroEventChecks:"Revisión Macro / Eventos", noExtraApi:"Sin créditos API adicionales", federalReserve:"Reserva Federal", nextFomc:"Próxima reunión FOMC", daysAway:"Días restantes", tradeDateStatus:"Estado de la fecha", earnings:"Earnings", upcomingEarnings:"Próximos earnings", automation:"Automatización",
@@ -846,15 +846,101 @@ document.getElementById("watchBoardSelect").addEventListener("change", e => {
   renderWatchlist();
 });
 
-document.getElementById("newWatchBoardBtn").addEventListener("click", () => {
-  const raw=prompt(currentLang==="es" ? "Nombre de la nueva watchlist:" : "New watchlist name:");
-  const name=(raw||"").trim(); if(!name) return;
+function ensureWatchlistModal() {
+  let modal=document.getElementById("watchlistCreateModal");
+  if (modal) return modal;
+
+  modal=document.createElement("div");
+  modal.id="watchlistCreateModal";
+  modal.className="app-modal";
+  modal.hidden=true;
+  modal.innerHTML=`
+    <div class="app-modal-backdrop" data-watchlist-modal-close></div>
+    <section class="app-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="watchlistModalTitle">
+      <div class="app-modal-kicker">PRE-FLIGHT WATCH</div>
+      <h3 id="watchlistModalTitle"></h3>
+      <p class="app-modal-copy"></p>
+      <label class="app-modal-label" for="watchlistNameInput"></label>
+      <input id="watchlistNameInput" class="app-modal-input" maxlength="32" autocomplete="off" />
+      <div id="watchlistNameError" class="app-modal-error" role="alert" hidden></div>
+      <div class="app-modal-actions">
+        <button type="button" class="secondary" id="watchlistCancelBtn"></button>
+        <button type="button" class="primary" id="watchlistCreateBtn"></button>
+      </div>
+    </section>`;
+  document.body.appendChild(modal);
+
+  modal.querySelectorAll("[data-watchlist-modal-close]").forEach(el => el.addEventListener("click", closeWatchlistModal));
+  document.getElementById("watchlistCancelBtn").addEventListener("click", closeWatchlistModal);
+  document.getElementById("watchlistCreateBtn").addEventListener("click", createWatchlistFromModal);
+  document.getElementById("watchlistNameInput").addEventListener("input", validateWatchlistName);
+  document.getElementById("watchlistNameInput").addEventListener("keydown", e => {
+    if (e.key==="Enter") { e.preventDefault(); createWatchlistFromModal(); }
+    if (e.key==="Escape") { e.preventDefault(); closeWatchlistModal(); }
+  });
+  return modal;
+}
+
+function localizeWatchlistModal() {
+  const modal=ensureWatchlistModal();
+  modal.querySelector("#watchlistModalTitle").textContent=t("createWatchlist");
+  modal.querySelector(".app-modal-copy").textContent=currentLang==="es"
+    ? "Crea una lista enfocada por sector, estrategia o idea."
+    : "Create a focused list by sector, strategy, or idea.";
+  modal.querySelector(".app-modal-label").textContent=t("watchlistName");
+  modal.querySelector("#watchlistNameInput").placeholder=t("watchlistNamePlaceholder");
+  modal.querySelector("#watchlistCancelBtn").textContent=t("cancel");
+  modal.querySelector("#watchlistCreateBtn").textContent=t("create");
+}
+
+function validateWatchlistName() {
+  const input=document.getElementById("watchlistNameInput");
+  const error=document.getElementById("watchlistNameError");
+  const createBtn=document.getElementById("watchlistCreateBtn");
+  if (!input || !error || !createBtn) return false;
+  const name=input.value.trim();
+  const duplicate=name && watchBoards.some(b => String(b.name || "").trim().toLowerCase()===name.toLowerCase());
+  error.textContent=duplicate ? t("watchlistDuplicate") : "";
+  error.hidden=!duplicate;
+  createBtn.disabled=!name || duplicate;
+  return Boolean(name && !duplicate);
+}
+
+function openWatchlistModal() {
+  const modal=ensureWatchlistModal();
+  localizeWatchlistModal();
+  const input=document.getElementById("watchlistNameInput");
+  input.value="";
+  modal.hidden=false;
+  document.body.classList.add("modal-open");
+  validateWatchlistName();
+  requestAnimationFrame(() => input.focus());
+}
+
+function closeWatchlistModal() {
+  const modal=document.getElementById("watchlistCreateModal");
+  if (!modal) return;
+  modal.hidden=true;
+  document.body.classList.remove("modal-open");
+  document.getElementById("newWatchBoardBtn")?.focus();
+}
+
+function createWatchlistFromModal() {
+  if (!validateWatchlistName()) return;
+  const input=document.getElementById("watchlistNameInput");
+  const name=input.value.trim().slice(0,32);
   const id="board-"+Date.now().toString(36);
   syncActiveBoardSymbols();
-  watchBoards.push({id,name:name.slice(0,32),symbols:[]});
-  activeWatchBoardId=id; watchSymbols=[]; selectedWatchSymbol="";
-  saveWatchlist(); renderWatchlist();
-});
+  watchBoards.push({id,name,symbols:[]});
+  activeWatchBoardId=id;
+  watchSymbols=[];
+  selectedWatchSymbol="";
+  saveWatchlist();
+  closeWatchlistModal();
+  renderWatchlist();
+}
+
+document.getElementById("newWatchBoardBtn").addEventListener("click", openWatchlistModal);
 
 document.getElementById("watchWorkspace").addEventListener("click", async e => {
   const handoff=e.target.closest(".strategy-handoff, .strategy-quick-open");
