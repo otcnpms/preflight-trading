@@ -213,7 +213,7 @@ app.get("/api/schwab/options/:symbol", async (req, res) => {
   const url = new URL(`${SCHWAB_MARKET_BASE}/chains`);
   url.searchParams.set("symbol", symbol);
   url.searchParams.set("contractType", "ALL");
-  url.searchParams.set("strikeCount", "6");
+  url.searchParams.set("strikeCount", "30");
   url.searchParams.set("includeUnderlyingQuote", "true");
   url.searchParams.set("strategy", "SINGLE");
   url.searchParams.set("fromDate", fmt(today));
