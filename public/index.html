@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#07111f" />
   <title>PreFlight Trading</title>
-  <link rel="stylesheet" href="/styles.css?v=20260922-2025" />
+  <link rel="stylesheet" href="/styles.css?v=20260922-2325" />
 </head>
 <body>
   <main class="shell">
@@ -268,6 +268,30 @@
           <label>Strike<select id="chainStrike"><option value="">Select strike</option></select></label>
         </div>
         <div class="chain-status muted" id="chainStatus">Load a ticker to browse Schwab option contracts.</div>
+        <div class="range-automation" id="rangeAutomation" hidden>
+          <div class="range-automation-head">
+            <div>
+              <p class="step">INVESTEP RANGE AUTOMATION</p>
+              <h3>Live OTM contract range</h3>
+            </div>
+            <span class="range-method-badge">8 OTM</span>
+          </div>
+          <div class="range-automation-metrics">
+            <div><span>Today direction</span><strong id="rangeDirection">—</strong></div>
+            <div><span>&gt; $20 marker · skipped</span><strong id="rangeThresholdMarker">—</strong></div>
+            <div><span>Sample</span><strong id="rangeSampleCount">0 / 8</strong></div>
+          </div>
+          <p class="range-automation-summary" id="rangeAutomationSummary"></p>
+          <div class="range-table-wrap">
+            <table class="range-table">
+              <thead>
+                <tr><th>Sample</th><th>Strike</th><th>Current $</th><th>Today's range</th><th>Valuation</th><th>Rank</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody id="rangeAutomationBody"></tbody>
+            </table>
+          </div>
+          <p class="range-automation-note">Method: today’s movement selects CALL or PUT · OTM only · find first premium &gt; $20 and skip it · analyze the next 8 strikes · rank by today’s low/high valuation % · top 2 stay subject to the live day-range check.</p>
+        </div>
         <div class="course-range-box" id="courseRangeBox" hidden>
           <div class="course-range-head">
             <strong id="courseRangeTitle">Saved Investep course reference</strong>
@@ -351,6 +375,6 @@
 
     <p class="disclaimer" data-i18n="disclaimer">PreFlight records methodology completion. It does not recommend whether to buy, sell, or place a trade.</p>
   </main>
-  <script src="/app.js?v=20260922-2025"></script>
+  <script src="/app.js?v=20260922-2325"></script>
 </body>
 </html>

@@ -40,6 +40,7 @@ function applyLanguage() {
   const loadSchwabOptions=document.getElementById("loadSchwabOptionsBtn"); if(loadSchwabOptions) loadSchwabOptions.textContent=t("loadSchwabOptions");
   const courseRangeTitle=document.getElementById("courseRangeTitle"); if(courseRangeTitle) courseRangeTitle.textContent=t("courseRangeTitle");
   const scanAllBtn=document.getElementById("scanAllBtn"); if(scanAllBtn && !scanAllBtn.disabled) scanAllBtn.textContent=t("scanAll");
+  if (typeof renderRangeAutomation === "function") renderRangeAutomation();
   renderWatchlist();
   renderChecklist();
   if (typeof strategy !== "undefined" && strategy?.value) renderStrategyModule(strategy.value);
@@ -261,6 +262,7 @@ async function loadMarketData() {
     const chainType=document.getElementById("chainType"); if(chainType) chainType.value="";
     const chainStrike=document.getElementById("chainStrike"); if(chainStrike) chainStrike.innerHTML='<option value="">Select strike</option>';
     const rangeBox=document.getElementById("courseRangeBox"); if(rangeBox) rangeBox.hidden=true;
+    const autoBox=document.getElementById("rangeAutomation"); if(autoBox) autoBox.hidden=true;
   }
 
   button.disabled = true;
@@ -1531,6 +1533,10 @@ function flattenSchwabChain(data) {
             ask: Number(contract.ask),
             mark: Number(contract.mark),
             last: Number(contract.last),
+            low: Number(contract.lowPrice),
+            high: Number(contract.highPrice),
+            volume: Number(contract.totalVolume),
+            openInterest: Number(contract.openInterest),
             symbol: contract.symbol || "",
             underlyingPrice: Number(data.underlyingPrice ?? data.underlying?.mark ?? data.underlying?.last)
           });
@@ -1563,6 +1569,161 @@ function populateChainStrikes() {
   document.getElementById("chainStatus").textContent = rows.length
     ? `${rows.length} Schwab contract quote(s) available for ${expiration} ${type}.`
     : (expiration && type ? "No contracts returned for that expiration/type." : "Choose expiration and type.");
+}
+
+
+const INVESTEP_SAMPLE_COUNT = 8;
+const INVESTEP_THRESHOLD_DOLLARS = 20;
+
+function currentRangeDirection() {
+  const change = Number(state.market?.change);
+  if (Number.isFinite(change) && change !== 0) return change > 0 ? "CALL" : "PUT";
+  const price = Number(state.market?.price);
+  const open = Number(state.market?.open);
+  if (Number.isFinite(price) && Number.isFinite(open) && price !== open) return price > open ? "CALL" : "PUT";
+  return "";
+}
+
+function optionContractDollars(contract) {
+  const ask = Number(contract?.ask);
+  return Number.isFinite(ask) && ask >= 0 ? ask * 100 : null;
+}
+
+function optionRangePct(contract) {
+  const low = Number(contract?.low);
+  const high = Number(contract?.high);
+  if (!Number.isFinite(low) || !Number.isFinite(high) || low <= 0 || high < low) return null;
+  return ((high - low) / low) * 100;
+}
+
+function optionPriceInsideDayRange(contract) {
+  const ask = Number(contract?.ask);
+  const low = Number(contract?.low);
+  const high = Number(contract?.high);
+  return [ask, low, high].every(Number.isFinite) && low > 0 && high >= low && ask >= low && ask <= high;
+}
+
+function buildInvestepRangeSample(expiration) {
+  const type = currentRangeDirection();
+  const spot = Number(state.market?.price);
+  if (!expiration || !type || !Number.isFinite(spot)) {
+    return { type, spot, marker:null, sample:[], ranked:[] };
+  }
+
+  const otm = (schwabOptionChain || [])
+    .filter(r => r.expiration === expiration && r.type === type)
+    .filter(r => type === "CALL" ? r.strike > spot : r.strike < spot)
+    // Start at the far OTM side and walk back toward spot.
+    .sort((a,b) => type === "CALL" ? b.strike - a.strike : a.strike - b.strike);
+
+  const markerIndex = otm.findIndex(r => {
+    const dollars = optionContractDollars(r);
+    return dollars !== null && dollars > INVESTEP_THRESHOLD_DOLLARS;
+  });
+  const marker = markerIndex >= 0 ? otm[markerIndex] : null;
+  const sample = markerIndex >= 0 ? otm.slice(markerIndex + 1, markerIndex + 1 + INVESTEP_SAMPLE_COUNT) : [];
+  const ranked = sample
+    .map((contract, sampleIndex) => ({
+      contract,
+      sampleIndex,
+      valuation: optionRangePct(contract),
+      inRange: optionPriceInsideDayRange(contract),
+      cost: optionContractDollars(contract)
+    }))
+    .filter(x => x.valuation !== null)
+    .sort((a,b) => b.valuation - a.valuation)
+    .map((x, rankIndex) => ({...x, rank:rankIndex + 1}));
+
+  return { type, spot, marker, sample, ranked };
+}
+
+function useRangeContract(symbol) {
+  const contract=(schwabOptionChain || []).find(r => r.symbol === symbol);
+  if(!contract) return;
+  document.getElementById("chainExpiration").value=contract.expiration;
+  document.getElementById("chainType").value=contract.type;
+  populateChainStrikes();
+  document.getElementById("chainStrike").value=String(contract.strike);
+  applySelectedSchwabContract();
+}
+
+function renderRangeAutomation() {
+  const box=document.getElementById("rangeAutomation");
+  if(!box) return;
+  const expiration=document.getElementById("chainExpiration")?.value || "";
+  if(!schwabOptionChain?.length || !expiration) {
+    box.hidden=true;
+    return;
+  }
+
+  const analysis=buildInvestepRangeSample(expiration);
+  box.hidden=false;
+  const direction=document.getElementById("rangeDirection");
+  const marker=document.getElementById("rangeThresholdMarker");
+  const count=document.getElementById("rangeSampleCount");
+  const summary=document.getElementById("rangeAutomationSummary");
+  const body=document.getElementById("rangeAutomationBody");
+
+  if(!analysis.type) {
+    direction.textContent=currentLang==="es" ? "Movimiento plano / sin dirección" : "Flat / no session direction";
+    marker.textContent="—";
+    count.textContent="0 / 8";
+    summary.textContent=currentLang==="es"
+      ? "Carga datos de mercado en vivo. La metodología usa el movimiento de hoy para escoger CALL o PUT."
+      : "Load live market data. The methodology uses today's movement to choose CALL or PUT.";
+    body.innerHTML="";
+    return;
+  }
+
+  const directionWord=analysis.type==="CALL"
+    ? (currentLang==="es" ? "ALZA → CALL" : "UP → CALL")
+    : (currentLang==="es" ? "BAJA → PUT" : "DOWN → PUT");
+  direction.textContent=directionWord;
+
+  if(!analysis.marker) {
+    marker.textContent=currentLang==="es" ? "No encontrado > $20" : "Not found > $20";
+    count.textContent="0 / 8";
+    summary.textContent=currentLang==="es"
+      ? "No se encontró un contrato OTM con precio actual mayor de $20 para usar como marcador."
+      : "No OTM contract with current price greater than $20 was found to use as the threshold marker.";
+    body.innerHTML="";
+    return;
+  }
+
+  marker.textContent=`${money(analysis.marker.strike)} · ${money(optionContractDollars(analysis.marker))}`;
+  count.textContent=`${analysis.sample.length} / ${INVESTEP_SAMPLE_COUNT}`;
+  const top2=analysis.ranked.slice(0,2);
+  summary.textContent=currentLang==="es"
+    ? `Se omite el marcador > $20. Se analizan los siguientes ${analysis.sample.length} contratos OTM y se destacan los 2 mayores % de valorización.`
+    : `The > $20 marker is skipped. The next ${analysis.sample.length} OTM contracts are analyzed and the 2 highest valuation percentages are highlighted.`;
+
+  const ranks=new Map(analysis.ranked.map(x=>[x.contract.symbol,x.rank]));
+  body.innerHTML=analysis.sample.map((contract,index)=>{
+    const valuation=optionRangePct(contract);
+    const cost=optionContractDollars(contract);
+    const inRange=optionPriceInsideDayRange(contract);
+    const rank=ranks.get(contract.symbol);
+    const isTop=rank===1 || rank===2;
+    const rangeText=Number.isFinite(contract.low) && Number.isFinite(contract.high)
+      ? `${money(contract.low*100)}–${money(contract.high*100)}`
+      : "—";
+    const statusText=inRange
+      ? (currentLang==="es" ? "EN RANGO" : "IN RANGE")
+      : (currentLang==="es" ? "FUERA DE RANGO" : "OUT OF RANGE");
+    return `<tr class="${isTop ? "range-top" : ""}">
+      <td><span class="range-sample-index">#${index+1}</span></td>
+      <td>${money(contract.strike)}</td>
+      <td>${money(cost)}</td>
+      <td>${rangeText}</td>
+      <td>${valuation===null ? "—" : valuation.toFixed(1)+"%"}</td>
+      <td>${rank ? "#"+rank : "—"}</td>
+      <td><span class="range-eligibility ${inRange ? "inside" : "outside"}">${statusText}</span></td>
+      <td><button type="button" class="secondary range-use-contract" data-range-symbol="${contract.symbol}">${currentLang==="es" ? "Usar" : "Use"}</button></td>
+    </tr>`;
+  }).join("");
+
+  const topText=top2.map(x=>`#${x.rank} ${money(x.contract.strike)} · ${x.valuation.toFixed(1)}% · ${x.inRange ? (currentLang==="es"?"en rango":"in range") : (currentLang==="es"?"fuera de rango":"out of range")}`).join("  |  ");
+  if(topText) summary.textContent += " · " + topText;
 }
 
 function applySelectedSchwabContract() {
@@ -1608,6 +1769,18 @@ document.getElementById("loadSchwabOptionsBtn").addEventListener("click", async 
     if (!resp.ok) throw new Error(data.error || "Unable to load Schwab options.");
     schwabOptionChain = flattenSchwabChain(data);
     populateChainExpirations(schwabOptionChain);
+    const expirationSelect=document.getElementById("chainExpiration");
+    const expirationValues=[...expirationSelect.options].map(o=>o.value).filter(Boolean);
+    const nearestFriday=expirationValues.find(value => {
+      const date=new Date(value+"T12:00:00Z");
+      return !Number.isNaN(date.getTime()) && date.getUTCDay()===5;
+    });
+    if(nearestFriday) expirationSelect.value=nearestFriday;
+    else if (expirationSelect.options.length > 1) expirationSelect.selectedIndex=1;
+    const direction=currentRangeDirection();
+    if(direction) document.getElementById("chainType").value=direction;
+    populateChainStrikes();
+    renderRangeAutomation();
     status.textContent = currentLang === "es"
       ? `${schwabOptionChain.length} cotizaciones de contratos cargadas para ${symbol}.`
       : `${schwabOptionChain.length} contract quotes loaded for ${symbol}.`;
@@ -1616,9 +1789,13 @@ document.getElementById("loadSchwabOptionsBtn").addEventListener("click", async 
   }
 });
 
-document.getElementById("chainExpiration").addEventListener("change", populateChainStrikes);
+document.getElementById("chainExpiration").addEventListener("change", () => { populateChainStrikes(); renderRangeAutomation(); });
 document.getElementById("chainType").addEventListener("change", populateChainStrikes);
 document.getElementById("chainStrike").addEventListener("change", applySelectedSchwabContract);
+document.getElementById("rangeAutomationBody")?.addEventListener("click", e => {
+  const btn=e.target.closest("[data-range-symbol]");
+  if(btn) useRangeContract(btn.dataset.rangeSymbol);
+});
 
 function number(id) {
   const v = parseFloat(document.getElementById(id).value);

@@ -385,3 +385,32 @@ body.modal-open { overflow: hidden; }
   .app-modal-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .app-modal-actions button { width: 100%; }
 }
+
+
+/* Investep live OTM range automation */
+.range-automation{margin-top:14px;padding:14px;border:1px solid #38506d;border-radius:13px;background:linear-gradient(180deg,#0a1727,#07111f)}
+.range-automation[hidden]{display:none!important}
+.range-automation-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.range-automation-head h3{margin:3px 0 0;font-size:17px}
+.range-method-badge{display:inline-flex;align-items:center;border:1px solid #725a2c;background:#241c0c;color:var(--gold);border-radius:999px;padding:6px 9px;font-size:9px;font-weight:900;letter-spacing:.06em;white-space:nowrap}
+.range-automation-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.range-automation-metrics>div{display:flex;flex-direction:column;gap:4px;padding:9px 10px;border:1px solid #203651;border-radius:10px;background:#091626}
+.range-automation-metrics span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.range-automation-metrics strong{font-size:12px}
+.range-automation-summary,.range-automation-note{margin:9px 0 0;color:#c9d8e8;font-size:10px;line-height:1.45}
+.range-automation-note{color:var(--muted)}
+.range-table-wrap{overflow-x:auto;margin-top:10px;border:1px solid #203651;border-radius:10px}
+.range-table{width:100%;border-collapse:collapse;min-width:760px;background:#07111f}
+.range-table th,.range-table td{padding:8px 9px;border-bottom:1px solid #172b42;text-align:left;font-size:10px;white-space:nowrap}
+.range-table th{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.05em;background:#091626}
+.range-table tr:last-child td{border-bottom:0}
+.range-table tr.range-top{background:#0d201c}
+.range-sample-index{color:var(--gold);font-weight:900}
+.range-eligibility{display:inline-flex;border:1px solid #38506d;border-radius:999px;padding:4px 7px;font-size:8px;font-weight:900;letter-spacing:.04em}
+.range-eligibility.inside{color:var(--good);border-color:#2d7a58;background:#0d251c}
+.range-eligibility.outside{color:var(--bad);border-color:#814545;background:#261111}
+.range-use-contract{padding:5px 8px!important;font-size:8px}
+@media(max-width:760px){
+  .range-automation-metrics{grid-template-columns:1fr}
+  .range-automation-head{align-items:center}
+}
