@@ -1769,18 +1769,12 @@ document.getElementById("loadSchwabOptionsBtn").addEventListener("click", async 
     if (!resp.ok) throw new Error(data.error || "Unable to load Schwab options.");
     schwabOptionChain = flattenSchwabChain(data);
     populateChainExpirations(schwabOptionChain);
-    const expirationSelect=document.getElementById("chainExpiration");
-    const expirationValues=[...expirationSelect.options].map(o=>o.value).filter(Boolean);
-    const nearestFriday=expirationValues.find(value => {
-      const date=new Date(value+"T12:00:00Z");
-      return !Number.isNaN(date.getTime()) && date.getUTCDay()===5;
-    });
-    if(nearestFriday) expirationSelect.value=nearestFriday;
-    else if (expirationSelect.options.length > 1) expirationSelect.selectedIndex=1;
-    const direction=currentRangeDirection();
-    if(direction) document.getElementById("chainType").value=direction;
-    populateChainStrikes();
-    renderRangeAutomation();
+    // Preserve the original manual contract-selection flow:
+    // expiration -> CALL/PUT -> strike. The range automation observes the
+    // selected expiration but must not take over the picker.
+    document.getElementById("chainType").value="";
+    document.getElementById("chainStrike").innerHTML='<option value="">Select strike</option>';
+    document.getElementById("rangeAutomation").hidden=true;
     status.textContent = currentLang === "es"
       ? `${schwabOptionChain.length} cotizaciones de contratos cargadas para ${symbol}.`
       : `${schwabOptionChain.length} contract quotes loaded for ${symbol}.`;
