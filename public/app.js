@@ -1770,7 +1770,13 @@ document.getElementById("loadSchwabOptionsBtn").addEventListener("click", async 
     schwabOptionChain = flattenSchwabChain(data);
     populateChainExpirations(schwabOptionChain);
     const expirationSelect=document.getElementById("chainExpiration");
-    if (expirationSelect.options.length > 1) expirationSelect.selectedIndex=1;
+    const expirationValues=[...expirationSelect.options].map(o=>o.value).filter(Boolean);
+    const nearestFriday=expirationValues.find(value => {
+      const date=new Date(value+"T12:00:00Z");
+      return !Number.isNaN(date.getTime()) && date.getUTCDay()===5;
+    });
+    if(nearestFriday) expirationSelect.value=nearestFriday;
+    else if (expirationSelect.options.length > 1) expirationSelect.selectedIndex=1;
     const direction=currentRangeDirection();
     if(direction) document.getElementById("chainType").value=direction;
     populateChainStrikes();
