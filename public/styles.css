@@ -290,3 +290,98 @@ button.secondary { color:#e7eef8; background:#0a1524; border:1px solid #304764; 
   .watch-detail-actions{width:100%;justify-content:stretch}
   .watch-detail-actions button{flex:1}
 }
+
+
+/* Branded app modal */
+body.modal-open { overflow: hidden; }
+
+.app-modal[hidden] { display: none; }
+.app-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.app-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(1, 9, 17, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.app-modal-dialog {
+  position: relative;
+  width: min(100%, 460px);
+  border: 1px solid rgba(191, 146, 52, 0.34);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(11, 24, 37, 0.98), rgba(6, 17, 28, 0.99));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+  padding: 26px;
+}
+.app-modal-kicker {
+  color: #b99234;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+}
+.app-modal-dialog h3 {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+.app-modal-copy {
+  margin: 8px 0 22px;
+  color: var(--muted, #8794a5);
+  line-height: 1.5;
+}
+.app-modal-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #d8dee7;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.app-modal-input {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid #26384b;
+  border-radius: 12px;
+  background: #07131f;
+  color: #f3f6fa;
+  padding: 0 14px;
+  font: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+.app-modal-input:focus {
+  border-color: #b99234;
+  box-shadow: 0 0 0 3px rgba(185, 146, 52, 0.13);
+}
+.app-modal-error {
+  margin-top: 8px;
+  color: #e69b9b;
+  font-size: 0.8rem;
+}
+.app-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+.app-modal-actions button {
+  min-width: 104px;
+}
+.app-modal-actions .primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .app-modal { padding: 16px; align-items: end; }
+  .app-modal-dialog { width: 100%; border-radius: 20px 20px 14px 14px; padding: 22px; }
+  .app-modal-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .app-modal-actions button { width: 100%; }
+}
