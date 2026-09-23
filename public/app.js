@@ -381,7 +381,7 @@ async function loadMarketData() {
     // market payload for the E1-E12 scan, avoiding a second provider request.
     const previousWatch = watchResults[symbol] || null;
     const watchStrategies = strategyWatch(data);
-    watchSymbols = [symbol, ...watchSymbols.filter(x => x !== symbol)].slice(0, 20);
+    const addedToBoard = promoteCurrentWatchSymbol(symbol);
     watchResults[symbol] = {
       loading: false,
       price: Number(data.price),
@@ -390,11 +390,13 @@ async function loadMarketData() {
       strategies: watchStrategies,
       transition: deriveTransition(previousWatch, watchStrategies)
     };
-    saveWatchlist();
     saveWatchResults();
     renderWatchlist();
 
     msg.textContent = `${symbol} loaded. 15m, 1H and Daily context calculated from returned price history.`;
+    if (!addedToBoard && !watchSymbols.includes(symbol)) {
+      msg.textContent += currentLang==="es" ? " · Watchlist llena (12/12)." : " · Watchlist full (12/12).";
+    }
   } catch (err) {
     document.getElementById("marketCard").hidden = true;
     msg.textContent = err.message;
@@ -823,71 +825,90 @@ document.getElementById("addWatchBtn").addEventListener("click", () => {
   const input = document.getElementById("watchTicker");
   const symbol = input.value.trim().toUpperCase();
   if (!/^[A-Z0-9.\-]{1,12}$/.test(symbol)) return;
-  if (!watchSymbols.includes(symbol)) watchSymbols.push(symbol);
-  watchSymbols = watchSymbols.slice(0, 20);
-  saveWatchlist();
+  if (!watchSymbols.includes(symbol) && watchSymbols.length >= WATCHLIST_LIMIT) { alert(t("boardFull")); return; }
+  promoteCurrentWatchSymbol(symbol);
   input.value = "";
   renderWatchlist();
 });
 
 document.getElementById("watchTicker").addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    document.getElementById("addWatchBtn").click();
-  }
+  if (e.key === "Enter") { e.preventDefault(); document.getElementById("addWatchBtn").click(); }
 });
 
-document.getElementById("watchList").addEventListener("click", async e => {
+document.getElementById("watchBoardSelect").addEventListener("change", e => {
+  syncActiveBoardSymbols();
+  activeWatchBoardId=e.target.value;
+  localStorage.setItem("preflightActiveWatchBoard",activeWatchBoardId);
+  watchSymbols=(watchBoards.find(b=>b.id===activeWatchBoardId)?.symbols || []).slice(0,WATCHLIST_LIMIT);
+  selectedWatchSymbol=watchSymbols[0] || "";
+  if(selectedWatchSymbol) localStorage.setItem("preflightSelectedWatchSymbol",selectedWatchSymbol);
+  saveWatchlist();
+  renderWatchlist();
+});
+
+document.getElementById("newWatchBoardBtn").addEventListener("click", () => {
+  const raw=prompt(currentLang==="es" ? "Nombre de la nueva watchlist:" : "New watchlist name:");
+  const name=(raw||"").trim(); if(!name) return;
+  const id="board-"+Date.now().toString(36);
+  syncActiveBoardSymbols();
+  watchBoards.push({id,name:name.slice(0,32),symbols:[]});
+  activeWatchBoardId=id; watchSymbols=[]; selectedWatchSymbol="";
+  saveWatchlist(); renderWatchlist();
+});
+
+document.getElementById("watchWorkspace").addEventListener("click", async e => {
   const handoff=e.target.closest(".strategy-handoff, .strategy-quick-open");
   if(e.target.closest(".strategy-quick-open")) e.preventDefault();
   if(handoff){
     const symbol=handoff.dataset.symbol, code=handoff.dataset.strategy;
     const candidate=(watchResults[symbol]?.strategies || []).find(s=>s.code===code);
+    selectedWatchSymbol=symbol; localStorage.setItem("preflightSelectedWatchSymbol",symbol);
     document.getElementById("ticker").value=symbol;
     document.getElementById("strategyPresent").value="yes";
     strategy.disabled=false; strategy.value=code;
-    const evidence=(candidate?.details || []).map(d=>(d.match?"✓":"○")+" "+d.text).join("\n");
+    const evidence=(candidate?.details || []).map(d=>(d.match?"✓":"○")+" "+swEvidence(d.text)).join("\n");
     document.getElementById("strategyNotes").value=(currentLang==="es" ? "Transferido desde Strategy Watch. Evidencia del escaneo:\n" : "Transferred from Strategy Watch. Scanner evidence:\n") + evidence;
     await loadMarketData();
     renderStrategyModule(code);
     document.getElementById("strategySection").scrollIntoView({behavior:"smooth",block:"start"});
     return;
   }
-  const check = e.target.closest(".watch-check");
-  if (check) return checkWatchSymbol(check.dataset.symbol);
-  const remove = e.target.closest("[data-remove]");
-  if (remove) {
-    watchSymbols = watchSymbols.filter(x => x !== remove.dataset.remove);
-    delete watchResults[remove.dataset.remove];
-    saveWatchlist();
-    saveWatchResults();
-    renderWatchlist();
+  const optionsJump=e.target.closest(".watch-options-jump");
+  if(optionsJump){
+    const symbol=optionsJump.dataset.symbol;
+    selectedWatchSymbol=symbol; localStorage.setItem("preflightSelectedWatchSymbol",symbol);
+    document.getElementById("ticker").value=symbol;
+    await loadMarketData();
+    document.getElementById("loadSchwabOptionsBtn").scrollIntoView({behavior:"smooth",block:"center"});
     return;
   }
-
-  // Clicking a Watchlist card selects that symbol as the active PreFlight ticker.
-  // Ignore clicks used to expand strategy details or operate row controls.
-  if (e.target.closest("button, summary, details, select, input, textarea, a")) return;
-  const row = e.target.closest(".watch-row[data-symbol]");
-  if (row) {
-    const symbol = row.dataset.symbol;
-    document.getElementById("ticker").value = symbol;
+  const check=e.target.closest(".watch-check"); if(check) return checkWatchSymbol(check.dataset.symbol);
+  const remove=e.target.closest("[data-remove]");
+  if(remove){
+    watchSymbols=watchSymbols.filter(x=>x!==remove.dataset.remove);
+    if(selectedWatchSymbol===remove.dataset.remove) selectedWatchSymbol=watchSymbols[0]||"";
+    saveWatchlist(); renderWatchlist(); return;
+  }
+  if(e.target.closest("button, summary, details, select, input, textarea, a")) return;
+  const row=e.target.closest(".watch-row[data-symbol]");
+  if(row){
+    const symbol=row.dataset.symbol;
+    selectedWatchSymbol=symbol; localStorage.setItem("preflightSelectedWatchSymbol",symbol);
+    document.getElementById("ticker").value=symbol;
+    renderWatchlist();
     await loadMarketData();
-    document.getElementById("ticker").scrollIntoView({behavior:"smooth",block:"center"});
   }
 });
 
-document.getElementById("watchList").addEventListener("keydown", async e => {
-  if (e.key !== "Enter" && e.key !== " ") return;
-  if (e.target.closest("button, summary, details, select, input, textarea, a")) return;
-  const row=e.target.closest(".watch-row[data-symbol]");
-  if(!row) return;
+document.getElementById("watchWorkspace").addEventListener("keydown", async e => {
+  if(e.key!=="Enter" && e.key!==" ") return;
+  if(e.target.closest("button, summary, details, select, input, textarea, a")) return;
+  const row=e.target.closest(".watch-row[data-symbol]"); if(!row) return;
   e.preventDefault();
-  document.getElementById("ticker").value=row.dataset.symbol;
-  await loadMarketData();
-  document.getElementById("ticker").scrollIntoView({behavior:"smooth",block:"center"});
+  selectedWatchSymbol=row.dataset.symbol; localStorage.setItem("preflightSelectedWatchSymbol",selectedWatchSymbol);
+  document.getElementById("ticker").value=selectedWatchSymbol;
+  renderWatchlist(); await loadMarketData();
 });
-
 Object.keys(watchResults).forEach(symbol => {
   if (watchResults[symbol]?.loading) watchResults[symbol].loading = false;
 });
