@@ -238,9 +238,16 @@ app.get("/api/context/finviz/:symbol", async (req, res) => {
     });
     if (!response.ok) throw new Error(`Finviz request failed (${response.status}).`);
     const html = await response.text();
-    const match = html.match(/>Recom<\/td>\s*<td[^>]*>([0-9.]+)<\/td>/i)
-      || html.match(/>Recom<[^>]*>.*?([0-9]+(?:\.[0-9]+)?)/is);
-    const recom = match ? Number(match[1]) : null;
+    // Finviz's snapshot table may wrap both the label and value in links/spans.
+    // Restrict parsing to the same table row as the exact Recom label so we do not
+    // accidentally capture a nearby numeric attribute (the old fallback did that).
+    const recomLabelIndex = html.search(/>\s*Recom\s*</i);
+    const rowStart = recomLabelIndex >= 0 ? html.lastIndexOf("<tr", recomLabelIndex) : -1;
+    const rowEnd = recomLabelIndex >= 0 ? html.indexOf("</tr>", recomLabelIndex) : -1;
+    const rowHtml = rowStart >= 0 && rowEnd > recomLabelIndex ? html.slice(rowStart, rowEnd + 5) : "";
+    const afterLabel = rowHtml.replace(/^.*?>\s*Recom\s*</is, "");
+    const valueMatch = afterLabel.match(/>\s*([0-9]+(?:\.[0-9]+)?)\s*</);
+    const recom = valueMatch ? Number(valueMatch[1]) : null;
     if (!Number.isFinite(recom)) return res.status(502).json({ error: "Finviz Recom was not found.", source: "Finviz" });
     res.json({ symbol, recom, source: "Finviz", status: recom < 2 ? "PASS" : recom <= 2.5 ? "NEUTRAL" : "CAUTION" });
   } catch (err) {
