@@ -228,6 +228,49 @@ app.get("/api/schwab/options/:symbol", async (req, res) => {
   }
 });
 
+// Independent context sources. These endpoints return source facts only; they never recommend a trade.
+app.get("/api/context/finviz/:symbol", async (req, res) => {
+  const symbol = String(req.params.symbol || "").trim().toUpperCase();
+  if (!/^[A-Z0-9.\-]{1,12}$/.test(symbol)) return res.status(400).json({ error: "Invalid ticker symbol." });
+  try {
+    const response = await fetch(`https://finviz.com/quote.ashx?t=${encodeURIComponent(symbol)}&p=d`, {
+      headers: { "User-Agent": "Mozilla/5.0 PreFlightTrading/1.0", "Accept": "text/html" }
+    });
+    if (!response.ok) throw new Error(`Finviz request failed (${response.status}).`);
+    const html = await response.text();
+    const match = html.match(/>Recom<\/td>\s*<td[^>]*>([0-9.]+)<\/td>/i)
+      || html.match(/>Recom<[^>]*>.*?([0-9]+(?:\.[0-9]+)?)/is);
+    const recom = match ? Number(match[1]) : null;
+    if (!Number.isFinite(recom)) return res.status(502).json({ error: "Finviz Recom was not found.", source: "Finviz" });
+    res.json({ symbol, recom, source: "Finviz", status: recom < 2 ? "PASS" : recom <= 2.5 ? "NEUTRAL" : "CAUTION" });
+  } catch (err) {
+    res.status(502).json({ error: err.message || "Unable to load Finviz context.", source: "Finviz" });
+  }
+});
+
+app.get("/api/context/earnings/:symbol", async (req, res) => {
+  const symbol = String(req.params.symbol || "").trim().toUpperCase();
+  if (!/^[A-Z0-9.\-]{1,12}$/.test(symbol)) return res.status(400).json({ error: "Invalid ticker symbol." });
+  try {
+    const response = await fetch(`https://www.optionslam.com/earnings/stocks/${encodeURIComponent(symbol)}`, {
+      headers: { "User-Agent": "Mozilla/5.0 PreFlightTrading/1.0", "Accept": "text/html" }
+    });
+    if (!response.ok) throw new Error(`OptionSlam request failed (${response.status}).`);
+    const html = (await response.text()).replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
+    const patterns = [
+      /(?:OS Estimate|Earnings Date|Estimated(?:\s+Earnings)?)[^A-Za-z0-9]{0,40}([A-Z][a-z]{2,8}\.?\s+\d{1,2},\s+20\d{2})(?:[^A-Z]{0,20}(AC|AMC|BO|BMO))?/i,
+      /([A-Z][a-z]{2,8}\.?\s+\d{1,2},\s+20\d{2})[^A-Z]{0,20}(AC|AMC|BO|BMO)/i
+    ];
+    let match = null;
+    for (const pattern of patterns) { match = html.match(pattern); if (match) break; }
+    if (!match) return res.status(502).json({ error: "OptionSlam earnings date was not found.", source: "OptionSlam" });
+    const session = match[2] || null;
+    res.json({ symbol, dateText: match[1], session, display: match[1] + (session ? ` · ${session}` : ""), source: "OptionSlam" });
+  } catch (err) {
+    res.status(502).json({ error: err.message || "Unable to load OptionSlam earnings context.", source: "OptionSlam" });
+  }
+});
+
 function avg(values) {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
