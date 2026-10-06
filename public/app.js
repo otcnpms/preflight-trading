@@ -2000,11 +2000,13 @@ document.getElementById("saveBtn").addEventListener("click", () => {
       })(),
       targetDollar: number("targetDollar"),
       targetTransactionValue: (() => {
-        const entry=number("entryPrice"), contracts=number("contracts"), pct=number("planPercent"), adj=number("transactionAdjustment") ?? 0;
+        const entry=number("entryPrice"), contracts=number("contracts"), pct=number("planPercent"), adjPerContract=number("transactionAdjustment") ?? 0;
+        const adj=contracts!==null && contracts>0 ? adjPerContract*contracts : 0;
         return entry!==null && contracts!==null && pct!==null ? entry*100*contracts*(1+pct/100)+adj : null;
       })(),
       targetOptionPrice: (() => {
-        const entry=number("entryPrice"), contracts=number("contracts"), pct=number("planPercent"), adj=number("transactionAdjustment") ?? 0;
+        const entry=number("entryPrice"), contracts=number("contracts"), pct=number("planPercent"), adjPerContract=number("transactionAdjustment") ?? 0;
+        const adj=contracts!==null && contracts>0 ? adjPerContract*contracts : 0;
         return entry!==null && contracts!==null && contracts>0 && pct!==null ? (entry*100*contracts*(1+pct/100)+adj)/(100*contracts) : null;
       })()
     },
