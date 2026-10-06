@@ -288,7 +288,9 @@ async function loadMarketData() {
       if (recomEl) recomEl.textContent = Number.isFinite(Number(finviz?.recom)) ? Number(finviz.recom).toFixed(2) : "Unavailable";
       if (recomStatusEl) {
         const v = Number(finviz?.recom);
-        recomStatusEl.textContent = Number.isFinite(v) ? (v < 2 ? "PASS" : v <= 2.5 ? "NEUTRAL" : "CAUTION") : "—";
+        const status = Number.isFinite(v) ? (v < 2 ? "PASS" : v <= 2.5 ? "NEUTRAL" : "CAUTION") : "—";
+        recomStatusEl.textContent = status;
+        recomStatusEl.style.color = status === "PASS" ? "#22c55e" : status === "NEUTRAL" ? "#eab308" : status === "CAUTION" ? "#f97316" : "";
       }
       const earningsDateEl = document.getElementById("earningsDate");
       const earningsSourceEl = document.getElementById("earningsSource");
