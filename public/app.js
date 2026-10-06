@@ -275,6 +275,26 @@ async function loadMarketData() {
     if (!resp.ok) throw new Error(data.error || "Unable to load market data.");
 
     state.market = data;
+
+    // Load independent context filters. These are evidence only, never trade recommendations.
+    Promise.allSettled([
+      fetch(`/api/context/finviz/${encodeURIComponent(symbol)}`).then(r => r.json()),
+      fetch(`/api/context/earnings/${encodeURIComponent(symbol)}`).then(r => r.json())
+    ]).then(([finvizResult, earningsResult]) => {
+      const finviz = finvizResult.status === "fulfilled" ? finvizResult.value : null;
+      const earnings = earningsResult.status === "fulfilled" ? earningsResult.value : null;
+      const recomEl = document.getElementById("finvizRecom");
+      const recomStatusEl = document.getElementById("finvizRecomStatus");
+      if (recomEl) recomEl.textContent = Number.isFinite(Number(finviz?.recom)) ? Number(finviz.recom).toFixed(2) : "Unavailable";
+      if (recomStatusEl) {
+        const v = Number(finviz?.recom);
+        recomStatusEl.textContent = Number.isFinite(v) ? (v < 2 ? "PASS" : v <= 2.5 ? "NEUTRAL" : "CAUTION") : "—";
+      }
+      const earningsDateEl = document.getElementById("earningsDate");
+      const earningsSourceEl = document.getElementById("earningsSource");
+      if (earningsDateEl) earningsDateEl.textContent = earnings?.display || "Unavailable";
+      if (earningsSourceEl) earningsSourceEl.textContent = earnings?.source || "OptionSlam";
+    });
     document.getElementById("marketCard").hidden = false;
     document.getElementById("marketSymbol").textContent = data.symbol;
     document.getElementById("marketName").textContent = data.name ? "· " + data.name : "";
@@ -1862,7 +1882,8 @@ function updatePositionPlan() {
   const entry = number("entryPrice");
   const contracts = number("contracts");
   const adjustmentRaw = number("transactionAdjustment");
-  const adjustment = adjustmentRaw === null ? 0 : adjustmentRaw;
+  const adjustmentPerContract = adjustmentRaw === null ? 0 : adjustmentRaw;
+  const adjustment = contracts !== null && contracts > 0 ? adjustmentPerContract * contracts : 0;
 
   if (plan === "10%") { percentEl.value = "10"; percentEl.readOnly = true; }
   else if (plan === "35%") { percentEl.value = "35"; percentEl.readOnly = true; }
@@ -1873,7 +1894,9 @@ function updatePositionPlan() {
   const ready = entry !== null && contracts !== null && contracts > 0 && percent !== null;
 
   document.getElementById("planEntryPrice").textContent = entry !== null ? money(entry) : "—";
-  document.getElementById("planAdjustmentDollar").textContent = money(adjustment);
+  document.getElementById("planAdjustmentDollar").textContent = contracts !== null && contracts > 0
+    ? `${money(adjustment)} (${money(adjustmentPerContract)} × ${contracts})`
+    : money(0);
 
   if (!ready) {
     document.getElementById("planEntryValue").textContent = "—";
