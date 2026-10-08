@@ -191,13 +191,14 @@ function renderChecklist() {
     row.className = "check-row";
     if (item.mode === "auto") {
       const fact = state.autoFacts[item.id];
+      const approved = Boolean(fact) && (item.id !== "earnings" || String(fact).startsWith("PASS"));
       row.innerHTML = `
         <div>
           <div class="check-title">${item.title} <span class="core-mode auto">AUTO</span></div>
           <div class="check-detail">${item.detail}</div>
-          <div class="auto-fact ${fact ? "available" : ""}">${fact || "Waiting for data"}</div>
+          <div class="auto-fact ${approved ? "available" : ""}">${fact || "Waiting for data"}</div>
         </div>
-        <div class="auto-check ${fact ? "done" : ""}">${fact ? "✓" : "—"}</div>`;
+        <div class="auto-check ${approved ? "done" : ""}">${approved ? "✓" : "—"}</div>`;
     } else {
       row.innerHTML = `
         <div>
@@ -228,8 +229,8 @@ function updateStatus() {
   const manualValues = Object.values(state.checks);
   const manualReviewed = manualValues.filter(Boolean).length;
   const autoValues = Object.values(state.autoFacts);
-  const autoReady = autoValues.filter(Boolean).length;
-  const hasFailure = manualValues.includes("fail");
+  const autoReady = autoValues.filter((value,index) => { const key=Object.keys(state.autoFacts)[index]; return Boolean(value) && (key !== "earnings" || String(value).startsWith("PASS")); }).length;
+  const hasFailure = manualValues.includes("fail") || String(state.autoFacts.earnings || "").startsWith("CAUTION");
   const allReviewed = manualReviewed === manualValues.length && autoReady === autoValues.length;
   const ready = allReviewed && !hasFailure;
 
