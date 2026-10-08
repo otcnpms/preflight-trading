@@ -61,9 +61,9 @@ async function load() {
     drawChart(data.candles);
     $("signalTitle").textContent=symbol+" · "+intervalLabels[selectedInterval]+" Candles + BB (20, 2)";
     const s=data.signal || {status:"CONTEXT_ONLY",direction:null};
-    $("signalDirection").textContent=s.status==="CONFIRMED"?s.direction+" · CONFIRMED":s.status==="UNCONFIRMED"?s.direction+" · UNCONFIRMED":s.status.replaceAll("_"," ");
-    $("signalDirection").className="signal-state "+(s.direction||"").toLowerCase();
-    $("signalExplanation").textContent=s.status==="CONTEXT_ONLY"?"Signal detection remains on 15m. This timeframe is for context.":s.status==="CONFIRMED"?"Historical candle meets breakout, volume and expansion thresholds.":s.status==="UNCONFIRMED"?"Breakout detected but filters did not all pass.":"No confirmed breakout in latest completed candle.";
+    $("signalDirection").textContent=s.status==="FORMING"?s.direction+" · FORMING":s.status==="CONFIRMED"?s.direction+" · CONFIRMED":s.status==="UNCONFIRMED"?s.direction+" · UNCONFIRMED":s.status.replaceAll("_"," ");
+    $("signalDirection").className="signal-state "+(s.status==="FORMING"?"forming":s.direction||"").toLowerCase();
+    $("signalExplanation").textContent=s.status==="CONTEXT_ONLY"?"Signal detection remains on 15m. This timeframe is for context.":s.status==="FORMING"?"Provisional intrabar breakout. Wait for candle close to confirm.":s.status==="CONFIRMED"?"Completed candle meets breakout and band expansion thresholds. Volume is supporting context.":s.status==="UNCONFIRMED"?"Breakout detected but filters did not all pass.":"No confirmed breakout in latest completed candle.";
     $("signalVolume").textContent=Number.isFinite(s.volumeRatio)?s.volumeRatio.toFixed(2)+"×":"—";
     $("signalExpansion").textContent=Number.isFinite(s.widthRatio)?s.widthRatio.toFixed(2)+"×":"—";
     $("signalSource").textContent=data.source;
@@ -99,9 +99,49 @@ function populateBoards(){
   if(boards.some(b=>b.id===active))select.value=active;
   if(!boards.length)$("signalScanProgress").textContent="No saved watchlists in this browser. Create one in Preflight first.";
 }
+let autoWatchTimer=null,scanInProgress=false,soundEnabled=false;
+const seenAlerts=new Set();
+let audioContext=null;
+function playSignalTone(){
+  if(!soundEnabled)return;
+  try{audioContext ||= new (window.AudioContext||window.webkitAudioContext)();
+    const osc=audioContext.createOscillator(),gain=audioContext.createGain();
+    osc.type="sine";osc.frequency.value=740;gain.gain.value=0.06;
+    osc.connect(gain);gain.connect(audioContext.destination);
+    osc.start();osc.stop(audioContext.currentTime+0.16);
+  }catch{}
+}
+function alertSignal(symbol,data){
+  const s=data.signal;
+  if(!data.signalIsLive || !s?.direction || !["CONFIRMED","FORMING"].includes(s.status))return;
+  const key=[symbol,s.direction,s.status,data.signalCandle].join("|");
+  if(seenAlerts.has(key))return;
+  seenAlerts.add(key);
+  if(seenAlerts.size>300)seenAlerts.delete(seenAlerts.values().next().value);
+  playSignalTone();
+  const title=symbol+" · "+s.direction+" "+s.status;
+  if("Notification" in window && Notification.permission==="granted"){
+    const notification=new Notification("Preflight Bollinger",{body:title,tag:key});
+    notification.onclick=()=>{window.focus();$("signalTicker").value=symbol;selectedInterval="15min";load();notification.close();};
+  }
+  $("signalScanProgress").textContent="New signal: "+title+" · "+new Date().toLocaleTimeString();
+}
+$("signalAlertSound").addEventListener("click",async()=>{
+  soundEnabled=!soundEnabled;
+  $("signalAlertSound").textContent=soundEnabled?"Sound on":"Sound off";
+  $("signalAlertSound").setAttribute("aria-pressed",String(soundEnabled));
+  if(soundEnabled){playSignalTone();if("Notification" in window && Notification.permission==="default")await Notification.requestPermission();}
+});
+$("signalAutoWatch").addEventListener("click",()=>{
+  if(autoWatchTimer){clearInterval(autoWatchTimer);autoWatchTimer=null;}
+  else { $("signalScanBoard").click();autoWatchTimer=setInterval(()=>{if(!scanInProgress)$("signalScanBoard").click();},60000); }
+  $("signalAutoWatch").textContent=autoWatchTimer?"Stop auto-watch":"Start auto-watch";
+  $("signalAutoWatch").setAttribute("aria-pressed",String(Boolean(autoWatchTimer)));
+});
 $("signalScanBoard").addEventListener("click",async()=>{
   const board=savedBoards().find(b=>b.id===$("signalBoard").value);
-  if(!board)return;
+  if(!board||scanInProgress)return;
+  scanInProgress=true;
   const btn=$("signalScanBoard");btn.disabled=true;
   $("signalScanResults").replaceChildren();
   for(const [i,symbol] of board.symbols.entries()){
@@ -114,10 +154,12 @@ $("signalScanBoard").addEventListener("click",async()=>{
     try{const res=await fetch("/api/signals/"+encodeURIComponent(symbol)+"?interval=15min",{cache:"no-store"});
       const data=await res.json();if(!res.ok)throw Error(data.error||"Unavailable");
       status.textContent=data.signal?.direction?data.signal.direction+" · "+data.signal.status:data.signal?.status||"NO SIGNAL";
-      status.className=(data.signal?.direction||"").toLowerCase();
+      status.className=(data.signal?.status==="FORMING"?"forming":data.signal?.direction||"").toLowerCase();
+      if(data.signalIsLive && data.signal?.direction)line.classList.add("live");
+      alertSignal(symbol,data);
     }catch(err){status.textContent=err.message;}
   }
   $("signalScanProgress").textContent="Scan complete · "+board.symbols.length+" symbols. Results are snapshots, not continuous alerts.";
-  btn.disabled=false;
+  btn.disabled=false;scanInProgress=false;
 });
 populateBoards();
