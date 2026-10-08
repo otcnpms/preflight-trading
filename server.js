@@ -445,14 +445,17 @@ const signalCache = new Map();
 app.get("/api/signals/:symbol", async (req, res) => {
   const symbol = String(req.params.symbol || "").trim().toUpperCase();
   if (!/^[A-Z0-9.-]{1,12}$/.test(symbol)) return res.status(400).json({error:"Invalid ticker."});
+  const interval = String(req.query.interval || "15min");
+  if (!["15min","1h","1day"].includes(interval)) return res.status(400).json({error:"Unsupported chart interval."});
   const key = process.env.TWELVE_DATA_API_KEY;
   if (!key) return res.status(503).json({error:"Twelve Data is not configured."});
-  const cached = signalCache.get(symbol);
+  const cacheKey = symbol+":"+interval;
+  const cached = signalCache.get(cacheKey);
   if (cached && Date.now()-cached.at < 60000) return res.json(cached.data);
   try {
     const url = new URL("https://api.twelvedata.com/time_series");
     url.searchParams.set("symbol",symbol);
-    url.searchParams.set("interval","15min");
+    url.searchParams.set("interval",interval);
     url.searchParams.set("outputsize","120");
     url.searchParams.set("apikey",key);
     const response = await fetch(url);
@@ -465,9 +468,9 @@ app.get("/api/signals/:symbol", async (req, res) => {
     })).sort((a,b)=>a.datetime.localeCompare(b.datetime));
     // Twelve Data may include an in-progress bar: conservatively omit newest.
     const completed = candles.slice(0,-1);
-    const data = {symbol,source:"Twelve Data",interval:"15min",
+    const data = {symbol,source:"Twelve Data",interval,
       candles:completed, signal:evaluateBollinger15m(completed)};
-    signalCache.set(symbol,{at:Date.now(),data});
+    signalCache.set(cacheKey,{at:Date.now(),data});
     res.json(data);
   } catch (err) { res.status(502).json({error:err.message || "Signal data unavailable."}); }
 });
