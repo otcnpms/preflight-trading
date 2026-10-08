@@ -296,149 +296,97 @@ function bollinger(values, period = 20, mult = 2) {
   return { middle, upper: middle + mult * sd, lower: middle - mult * sd };
 }
 
+// Primary market-data source for Preflight and watchlist checks: Schwab only.
+// Never silently fall back to Twelve Data or return a stale quote.
 app.get("/api/market/:symbol", async (req, res) => {
-  const apiKey = process.env.TWELVE_DATA_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: "Market data is not configured." });
-
   const symbol = String(req.params.symbol || "").trim().toUpperCase();
-  if (!/^[A-Z0-9.\-]{1,12}$/.test(symbol)) {
-    return res.status(400).json({ error: "Invalid ticker symbol." });
-  }
-
-  const cached = marketCache.get(symbol);
-  if (cached && Date.now() - cached.time < CACHE_MS) {
-    return res.json({ ...cached.data, cached: true });
-  }
-
+  if (!/^[A-Z0-9.\\-]{1,12}$/.test(symbol)) return res.status(400).json({ error: "Invalid ticker symbol." });
+  const bundle = await getSchwabTokens(req, res);
+  if (!bundle) return res.status(401).json({ error: "Connect Schwab to load market data." });
+  // Quote data is session-scoped; do not share a cached result across Schwab accounts.
+  const cacheKey = symbol + ":" + bundle.access_token;
+  const cached = marketCache.get(cacheKey);
+  if (cached && Date.now() - cached.time < CACHE_MS) return res.json({ ...cached.data, cached: true });
+  const headers = { Authorization: "Bearer " + bundle.access_token, Accept: "application/json" };
+  const historyUrl = (frequencyType, frequency, periodType, period) => {
+    const url = new URL(SCHWAB_MARKET_BASE + "/pricehistory");
+    for (const [key, value] of Object.entries({ symbol, frequencyType, frequency, periodType, period, needExtendedHoursData: "false" }))
+      url.searchParams.set(key, value);
+    return url;
+  };
+  const quoteUrl = new URL(SCHWAB_MARKET_BASE + "/quotes");
+  quoteUrl.searchParams.set("symbols", symbol);
   try {
-    const quoteUrl = new URL("https://api.twelvedata.com/quote");
-    quoteUrl.searchParams.set("symbol", symbol);
-    quoteUrl.searchParams.set("apikey", apiKey);
-
-    function seriesUrl(interval) {
-      const url = new URL("https://api.twelvedata.com/time_series");
-      url.searchParams.set("symbol", symbol);
-      url.searchParams.set("interval", interval);
-      url.searchParams.set("outputsize", "220");
-      url.searchParams.set("apikey", apiKey);
-      return url;
+    const urls = [
+      quoteUrl,
+      historyUrl("daily", "1", "year", "1"),
+      historyUrl("minute", "30", "day", "10"),
+      historyUrl("minute", "15", "day", "10")
+    ];
+    const responses = await Promise.all(urls.map(url => fetch(url, { headers })));
+    const payloads = await Promise.all(responses.map(resp => resp.json().catch(() => ({}))));
+    for (let i = 0; i < responses.length; i++) {
+      if (!responses[i].ok) return res.status(responses[i].status).json({
+        error: payloads[i].message || payloads[i].error || "Schwab market data unavailable."
+      });
     }
-
-    const [quoteResp, dailyResp, hourResp, min15Resp] = await Promise.all([
-      fetch(quoteUrl),
-      fetch(seriesUrl("1day")),
-      fetch(seriesUrl("1h")),
-      fetch(seriesUrl("15min"))
-    ]);
-    const [quote, daily, hour, min15] = await Promise.all([
-      quoteResp.json(),
-      dailyResp.json(),
-      hourResp.json(),
-      min15Resp.json()
-    ]);
-
-    if (!quoteResp.ok || quote.status === "error") {
-      throw new Error(quote.message || "Quote request failed.");
-    }
-
-    function parseSeries(resp, payload, label) {
-      if (!resp.ok || payload.status === "error" || !Array.isArray(payload.values)) {
-        return { error: payload.message || label + " history unavailable.", rows: [] };
-      }
-      const rows = [...payload.values]
-        .map(v => ({
-          datetime: v.datetime,
-          open: Number(v.open),
-          high: Number(v.high),
-          low: Number(v.low),
-          close: Number(v.close),
-          volume: Number(v.volume)
-        }))
-        .filter(v => Number.isFinite(v.close))
-        .sort((a, b) => a.datetime.localeCompare(b.datetime));
-      return { error: null, rows };
-    }
-
-    function summarize(parsed) {
-      const closes = parsed.rows.map(v => v.close);
-      const previousCloses = closes.slice(0, -1);
-      return {
-        available: parsed.rows.length > 0,
-        error: parsed.error,
-        latest: parsed.rows.at(-1) || null,
-        previous: parsed.rows.at(-2) || null,
-        movingAverages: {
-          ma20: sma(closes, 20),
-          ma40: sma(closes, 40),
-          ma100: sma(closes, 100),
-          ma200: sma(closes, 200)
-        },
-        previousMovingAverages: {
-          ma20: sma(previousCloses, 20),
-          ma40: sma(previousCloses, 40),
-          ma100: sma(previousCloses, 100),
-          ma200: sma(previousCloses, 200)
-        },
-        bollinger: bollinger(closes, 20, 2),
-        previousBollinger: bollinger(previousCloses, 20, 2)
-      };
-    }
-
-    const dailyParsed = parseSeries(dailyResp, daily, "Daily");
-    if (!dailyParsed.rows.length) {
-      throw new Error(dailyParsed.error || "Daily history request failed.");
-    }
-    const hourParsed = parseSeries(hourResp, hour, "1H");
-    const min15Parsed = parseSeries(min15Resp, min15, "15m");
-
-    const dailySummary = summarize(dailyParsed);
-    const hourSummary = summarize(hourParsed);
-    const min15Summary = summarize(min15Parsed);
-
-    const rows = dailyParsed.rows;
-    const closes = rows.map(v => v.close);
-    const bb = dailySummary.bollinger;
-    const previousClose = Number(quote.previous_close);
-    const open = Number(quote.open);
-    const gapPct = Number.isFinite(previousClose) && previousClose !== 0 && Number.isFinite(open)
-      ? ((open - previousClose) / previousClose) * 100
-      : null;
-
-    const data = {
-      symbol,
-      name: quote.name || null,
-      exchange: quote.exchange || null,
-      currency: quote.currency || "USD",
-      datetime: quote.datetime || null,
-      price: Number(quote.close),
-      open,
-      high: Number(quote.high),
-      low: Number(quote.low),
-      previousClose,
-      change: Number(quote.change),
-      percentChange: Number(quote.percent_change),
-      volume: Number(quote.volume),
-      gapPct,
-      movingAverages: dailySummary.movingAverages,
-      bollingerDaily: bb,
-      latestDailyBar: dailySummary.latest,
-      timeframes: {
-        min15: min15Summary,
-        hour1: hourSummary,
-        daily: dailySummary
-      },
-      source: "Twelve Data",
-      cached: false
+    const item = payloads[0][symbol];
+    if (!item || item.symbol !== symbol || !item.quote) throw new Error("Schwab quote missing for requested ticker.");
+    const quote = item.quote || {};
+    const parseBars = payload => {
+      if (!Array.isArray(payload.candles)) return [];
+      return payload.candles.map(c => ({
+        datetime: new Date(c.datetime).toISOString(), open: Number(c.open), high: Number(c.high),
+        low: Number(c.low), close: Number(c.close), volume: Number(c.volume)
+      })).filter(c => Number.isFinite(c.close)).sort((a,b) => a.datetime.localeCompare(b.datetime));
     };
-
-    marketCache.set(symbol, { time: Date.now(), data });
+    const daily = parseBars(payloads[1]), halfHours = parseBars(payloads[2]), min15 = parseBars(payloads[3]);
+    if (daily.length < 20) throw new Error("Insufficient Schwab daily history.");
+    const eastern = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23" });
+    const parts = date => Object.fromEntries(eastern.formatToParts(date).filter(x => x.type !== "literal").map(x => [x.type,x.value]));
+    const groups = new Map();
+    for (const c of halfHours) {
+      const p = parts(new Date(c.datetime)), minutes = Number(p.hour)*60+Number(p.minute);
+      const slot = Math.floor((minutes-570)/60);
+      const key = p.year+"-"+p.month+"-"+p.day+":"+slot;
+      if (!groups.has(key)) groups.set(key,{...c,count:0});
+      const g = groups.get(key);
+      g.high = Math.max(g.high,c.high); g.low = Math.min(g.low,c.low);
+      g.close = c.close; if (g.count) g.volume += c.volume; g.count++;
+    }
+    const hour = [...groups.values()].filter(g => g.count===2).map(({count,...c})=>c);
+    const summarize = rows => {
+      const closes = rows.map(v => v.close), previous = closes.slice(0,-1);
+      return {
+        available: rows.length > 0, error: rows.length ? null : "Schwab history unavailable.",
+        latest: rows.at(-1) || null, previous: rows.at(-2) || null,
+        movingAverages: { ma20:sma(closes,20), ma40:sma(closes,40), ma100:sma(closes,100), ma200:sma(closes,200) },
+        previousMovingAverages: { ma20:sma(previous,20), ma40:sma(previous,40), ma100:sma(previous,100), ma200:sma(previous,200) },
+        bollinger:bollinger(closes,20,2), previousBollinger:bollinger(previous,20,2)
+      };
+    };
+    const dailySummary = summarize(daily), hourSummary = summarize(hour), min15Summary = summarize(min15);
+    const price = Number(quote.lastPrice), previousClose = Number(quote.closePrice), open = Number(quote.openPrice);
+    if (!Number.isFinite(price) || price <= 0) throw new Error("Schwab quote has no valid last price.");
+    const change = price - previousClose;
+    const data = {
+      symbol, name:item.description || null, exchange:item.exchange || null, currency:"USD",
+      datetime:Number.isFinite(Number(quote.quoteTime)) && Number(quote.quoteTime)>0 ? new Date(Number(quote.quoteTime)).toISOString() : null,
+      price, open, high:Number(quote.highPrice), low:Number(quote.lowPrice), previousClose,
+      change, percentChange:previousClose > 0 ? change/previousClose*100 : null,
+      volume:Number(quote.totalVolume), gapPct:previousClose > 0 ? (open-previousClose)/previousClose*100 : null,
+      movingAverages:dailySummary.movingAverages, bollingerDaily:dailySummary.bollinger,
+      latestDailyBar:dailySummary.latest,
+      timeframes:{ min15:min15Summary, hour1:hourSummary, daily:dailySummary },
+      source:"Charles Schwab", realtime:item.realtime ?? null, cached:false
+    };
+    marketCache.set(cacheKey,{time:Date.now(),data});
     res.json(data);
   } catch (err) {
-    console.error("Market data error:", err);
-    res.status(502).json({ error: err.message || "Unable to load market data." });
+    console.error("Schwab market data error:",err);
+    res.status(502).json({error:err.message || "Schwab market data unavailable."});
   }
 });
-
 
 const { evaluateBollinger15m } = require("./lib/bollinger15m");
 const signalCache = new Map();
