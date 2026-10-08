@@ -108,12 +108,13 @@ $("signalScanBoard").addEventListener("click",async()=>{
     $("signalScanProgress").textContent="Scanning "+(i+1)+"/"+board.symbols.length+" · "+symbol;
     const line=document.createElement("div");line.className="data-line";
     const link=document.createElement("button");link.type="button";link.className="secondary";link.textContent=symbol;
-    link.addEventListener("click",()=>{$("signalTicker").value=symbol;selectedInterval="15min";document.querySelectorAll("[data-interval]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.interval==="15min")));load();});
+    link.addEventListener("click",()=>{document.querySelectorAll("#signalScanResults .data-line").forEach(el=>el.classList.remove("active"));line.classList.add("active");$("signalTicker").value=symbol;selectedInterval="15min";document.querySelectorAll("[data-interval]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.interval==="15min")));load();});
     const status=document.createElement("strong");status.textContent="Checking…";
     line.append(link,status);$("signalScanResults").appendChild(line);
     try{const res=await fetch("/api/signals/"+encodeURIComponent(symbol)+"?interval=15min",{cache:"no-store"});
       const data=await res.json();if(!res.ok)throw Error(data.error||"Unavailable");
       status.textContent=data.signal?.direction?data.signal.direction+" · "+data.signal.status:data.signal?.status||"NO SIGNAL";
+      status.className=(data.signal?.direction||"").toLowerCase();
     }catch(err){status.textContent=err.message;}
   }
   $("signalScanProgress").textContent="Scan complete · "+board.symbols.length+" symbols. Results are snapshots, not continuous alerts.";
