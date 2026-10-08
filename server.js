@@ -439,6 +439,70 @@ app.get("/api/market/:symbol", async (req, res) => {
   }
 });
 
+
+const { evaluateBollinger15m } = require("./lib/bollinger15m");
+const signalCache = new Map();
+app.get("/api/signals/:symbol", async (req, res) => {
+  const symbol = String(req.params.symbol || "").trim().toUpperCase();
+  if (!/^[A-Z0-9.-]{1,12}$/.test(symbol)) return res.status(400).json({error:"Invalid ticker."});
+  const interval = String(req.query.interval || "15min");
+  if (!["15min","1h","1day"].includes(interval)) return res.status(400).json({error:"Unsupported chart interval."});
+  const cacheKey = symbol+":"+interval;
+  const cached = signalCache.get(cacheKey);
+  if (cached && Date.now()-cached.at < 60000) return res.json(cached.data);
+  const bundle = await getSchwabTokens(req,res);
+  if (!bundle) return res.status(401).json({error:"Connect Schwab in Preflight to load charts."});
+  try {
+    const url = new URL(SCHWAB_MARKET_BASE+"/pricehistory");
+    url.searchParams.set("symbol",symbol);
+    url.searchParams.set("periodType",interval==="1day"?"year":"day");
+    url.searchParams.set("period",interval==="1day"?"1":"10");
+    url.searchParams.set("frequencyType",interval==="1day"?"daily":"minute");
+    url.searchParams.set("frequency",interval==="1day"?"1":interval==="1h"?"30":"15");
+    url.searchParams.set("needExtendedHoursData","false");
+    const response = await fetch(url,{headers:{Authorization:"Bearer "+bundle.access_token,Accept:"application/json"}});
+    const payload = await response.json().catch(()=>({}));
+    if(!response.ok || !Array.isArray(payload.candles))
+      return res.status(response.ok?502:response.status).json({error:payload.message||"Schwab price history unavailable."});
+    const raw=payload.candles.map(c=>({datetime:new Date(c.datetime).toISOString(),
+      open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close),volume:Number(c.volume)}))
+      .filter(c=>Number.isFinite(c.close)).sort((a,b)=>a.datetime.localeCompare(b.datetime));
+    // Schwab minute frequency supports 1, 5, 10, 15 and 30, not 60.
+    // Build true hourly OHLCV candles from 30-minute bars, aligned to US market hours.
+    let candles=raw;
+    if(interval==="1h"){
+      const fmt=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+      const groups=new Map();
+      for(const c of raw){
+        const p=Object.fromEntries(fmt.formatToParts(new Date(c.datetime)).filter(v=>v.type!=="literal").map(v=>[v.type,v.value]));
+        const mins=Number(p.hour)*60+Number(p.minute);
+        const slot=Math.floor((mins-570)/60);
+        const k=p.year+"-"+p.month+"-"+p.day+":"+slot;
+        if(!groups.has(k))groups.set(k,{...c,count:0});
+        const g=groups.get(k);g.high=Math.max(g.high,c.high);g.low=Math.min(g.low,c.low);g.close=c.close;g.volume+=g.count?c.volume:0;g.count++;
+      }
+      candles=[...groups.values()].filter(c=>c.count===2).map(({count,...c})=>c);
+    }
+    const now=Date.now();
+    const eastern=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+    const parts=d=>Object.fromEntries(eastern.formatToParts(d).filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
+    const today=parts(new Date(now));
+    // Schwab daily bars are timestamped at the session start; a completed
+    // prior trading day must not be removed by a rolling 24-hour cutoff.
+    const completed=candles.filter(c=>{
+      const stamp=new Date(c.datetime).getTime();
+      if(interval==="15min")return stamp+900000<=now;
+      if(interval==="1h")return stamp+3600000<=now;
+      const p=parts(new Date(stamp));
+      const day=p.year+p.month+p.day, current=today.year+today.month+today.day;
+      return day<current || (day===current && (Number(today.hour)*60+Number(today.minute))>=960);
+    });
+    const data={symbol,source:"Charles Schwab",interval,candles:completed,signal:interval==="15min"?evaluateBollinger15m(completed):null};
+    signalCache.set(cacheKey,{at:Date.now(),data});
+    res.json(data);
+  }catch(err){res.status(502).json({error:err.message||"Schwab candles unavailable."});}
+});
+
 app.use((_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
