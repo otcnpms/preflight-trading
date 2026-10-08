@@ -20,9 +20,9 @@ test("downward breakout confirms PUT", () => {
   assert.equal(result.status,"CONFIRMED");
   assert.equal(result.direction,"PUT");
 });
-test("low volume does not confirm breakout", () => {
+test("low volume is secondary and does not block breakout confirmation", () => {
   const rows=Array.from({length:20},(_,i)=>candle(100+(i%2),100));
-  assert.equal(evaluateBollinger15m([...rows,candle(110,50)]).status,"UNCONFIRMED");
+  assert.equal(evaluateBollinger15m([...rows,candle(110,50)]).status,"CONFIRMED");
 });
 test("invalid OHLC is rejected", () => {
   const rows=Array.from({length:21},()=>candle(100));
