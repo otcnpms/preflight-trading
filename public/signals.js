@@ -49,6 +49,7 @@ function drawChart(candles) {
   element("text",{x:right,y:393,fill:"#91a2b8","font-size":11,"text-anchor":"end"},svg).textContent=rows.at(-1).datetime;
 }
 let selectedInterval="15min";
+let selectedTradeDirection=null;
 const intervalLabels={"1day":"D","1h":"1H","15min":"15m"};
 async function load() {
   const symbol=$("signalTicker").value.trim().toUpperCase();
@@ -61,6 +62,8 @@ async function load() {
     drawChart(data.candles);
     $("signalTitle").textContent=symbol+" · "+intervalLabels[selectedInterval]+" Candles + BB (20, 2)";
     const s=data.signal || {status:"CONTEXT_ONLY",direction:null};
+    selectedTradeDirection = selectedInterval==="15min" && ["CALL","PUT"].includes(s.direction) ? s.direction : null;
+    updateInvestepHandoff();
     $("signalDirection").textContent=s.status==="FORMING"?s.direction+" · FORMING":s.status==="CONFIRMED"?s.direction+" · CONFIRMED":s.status==="UNCONFIRMED"?s.direction+" · UNCONFIRMED":s.status.replaceAll("_"," ");
     $("signalDirection").className="signal-state "+(s.status==="FORMING"?"forming":s.direction||"").toLowerCase();
     $("signalExplanation").textContent=s.status==="CONTEXT_ONLY"?"Signal detection remains on 15m. This timeframe is for context.":s.status==="FORMING"?"Provisional intrabar breakout. Wait for candle close to confirm.":s.status==="CONFIRMED"?"Completed candle meets breakout and band expansion thresholds. Volume is supporting context.":s.status==="UNCONFIRMED"?"Breakout detected but filters did not all pass.":"No confirmed breakout in latest completed candle.";
@@ -178,8 +181,11 @@ populateBoards();
 function updateInvestepHandoff(){
   const symbol=$("signalTicker").value.trim().toUpperCase();
   const link=$("investepHandoff");
-  link.href=/^[A-Z0-9.\\-]{1,12}$/.test(symbol)?"/?symbol="+encodeURIComponent(symbol):"/";
+  const params=new URLSearchParams();
+  if(/^[A-Z0-9.\\-]{1,12}$/.test(symbol))params.set("symbol",symbol);
+  if(selectedTradeDirection)params.set("direction",selectedTradeDirection);
+  link.href="/"+(params.size?"?"+params.toString():"");
 }
-$("signalTicker").addEventListener("input",updateInvestepHandoff);
+$("signalTicker").addEventListener("input",()=>{selectedTradeDirection=null;updateInvestepHandoff();});
 $("investepHandoff").addEventListener("click",updateInvestepHandoff);
 updateInvestepHandoff();
