@@ -21,7 +21,7 @@ function breakoutMarkers(candles) {
       : candles[i].close < prior.lower ? "PUT" : null;
     const confirmed = direction && prior.width > 0 && current.width / prior.width >= 1.02;
     if (!confirmed) { previous = null; continue; }
-    if (direction !== previous) markers.push({index: i, direction});
+    markers.push({index: i, direction, first: direction !== previous});
     previous = direction;
   }
   return markers;
@@ -66,7 +66,7 @@ function drawChart(candles) {
       height:Math.max(1,Math.abs(y(c.open)-y(c.close))),fill:color},svg);
   });
   if (selectedInterval === "15min") {
-    for (const marker of breakoutMarkers(rows)) {
+    for (const marker of breakoutMarkers(rows).filter(m => m.first)) {
       const c = rows[marker.index], cx = x(marker.index);
       const call = marker.direction === "CALL";
       const cy = call ? Math.min(bottom - 12, y(c.low) + 17) : Math.max(top + 12, y(c.high) - 17);
@@ -95,8 +95,10 @@ async function load() {
     if(!response.ok)throw new Error(data.error||"Data unavailable");
     drawChart(data.candles);
     const markers = selectedInterval === "15min" ? breakoutMarkers(data.candles.slice(-65)) : [];
-    const call100 = selectedInterval === "15min" && data.signal?.status === "CONFIRMED" && data.signal?.direction === "CALL";
-    const put100 = selectedInterval === "15min" && data.signal?.status === "CONFIRMED" && data.signal?.direction === "PUT";
+    const latestIndex = Math.min(64, data.candles.length - 1);
+    const latest = markers.find(m => m.index === latestIndex);
+    const call100 = latest?.direction === "CALL";
+    const put100 = latest?.direction === "PUT";
     const indicator = $("signalBreakout100");
     if (indicator) indicator.textContent = selectedInterval === "15min"
       ? "CALL " + (call100 ? 100 : 0) + " · PUT " + (put100 ? 100 : 0) + " · latest completed candle"
