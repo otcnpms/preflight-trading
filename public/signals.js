@@ -101,7 +101,7 @@ function populateBoards(){
 }
 let autoWatchTimer=null,scanInProgress=false,soundEnabled=false,nextScanAt=0;
 const seenAlerts=new Set();
-const baselineSymbols=new Set();
+const lastObservedCandles=new Map();
 let activeWatchlistId=null;
 function shortSignal(data){
   const s=data.signal;
@@ -161,9 +161,9 @@ $("signalAutoWatch").addEventListener("click",()=>{
 $("signalScanBoard").addEventListener("click",async()=>{
   const board=savedBoards().find(b=>b.id===$("signalBoard").value);
   if(!board||scanInProgress)return;
-  if(activeWatchlistId!==board.id){activeWatchlistId=board.id;baselineSymbols.clear();seenAlerts.clear();}
+  if(activeWatchlistId!==board.id){activeWatchlistId=board.id;lastObservedCandles.clear();seenAlerts.clear();}
   scanInProgress=true;
-  const alreadyObserved=new Set(baselineSymbols);
+  const priorCandles=new Map(lastObservedCandles);
   const btn=$("signalScanBoard");btn.disabled=true;
   $("signalScanResults").replaceChildren();
   for(const [i,symbol] of board.symbols.entries()){
@@ -180,8 +180,9 @@ $("signalScanBoard").addEventListener("click",async()=>{
       status.className=(data.signal?.status==="FORMING"?"forming":data.signal?.direction||"").toLowerCase();
       if(data.signalIsLive && data.signal?.direction)line.classList.add("live");
       else if(data.signal?.direction){line.classList.add("old");status.classList.add("old");}
-      if(alreadyObserved.has(symbol))alertSignal(symbol,data);
-      baselineSymbols.add(symbol);
+      const candleKey=data.signalCandle||null;
+      if(priorCandles.has(symbol) && priorCandles.get(symbol)!==candleKey)alertSignal(symbol,data);
+      lastObservedCandles.set(symbol,candleKey);
     }catch(err){status.textContent=err.message;}
   }
   $("signalScanProgress").textContent=board.symbols.length+" symbols";
