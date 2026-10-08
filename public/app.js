@@ -171,9 +171,13 @@ function refreshEarningsPreflight() {
     ].join("-") : null;
     if (date) {
       const label = earnings.display || date;
-      fact = date >= tradeDate && date <= expiration
-        ? "CAUTION · Earnings within trade window: " + label
-        : "VERIFY · Reported earnings " + label + " (confirm date/session)";
+      fact = expiration < tradeDate
+        ? "VERIFY · Expiration precedes trade date"
+        : date >= tradeDate && date <= expiration
+          ? "CAUTION · Earnings within trade window: " + label
+          : date > expiration
+            ? "PASS · Reported earnings after expiration: " + label
+            : "VERIFY · Reported earnings date is in the past: " + label;
     }
   } else if (earnings?.dateText) {
     fact = "VERIFY · Select option expiration to evaluate earnings: " + earnings.display;
@@ -182,6 +186,7 @@ function refreshEarningsPreflight() {
   renderChecklist();
 }
 document.getElementById("expiration")?.addEventListener("change", refreshEarningsPreflight);
+document.getElementById("expiration")?.addEventListener("input", refreshEarningsPreflight);
 document.getElementById("tradeDate")?.addEventListener("change", refreshEarningsPreflight);
 
 function renderChecklist() {
@@ -310,6 +315,7 @@ async function loadMarketData() {
       fetch(`/api/context/finviz/${encodeURIComponent(symbol)}`).then(r => r.json()),
       fetch(`/api/context/earnings/${encodeURIComponent(symbol)}`).then(r => r.json())
     ]).then(([finvizResult, earningsResult]) => {
+      if (String(state.market?.symbol || "").toUpperCase() !== symbol) return;
       const finviz = finvizResult.status === "fulfilled" ? finvizResult.value : null;
       const earnings = earningsResult.status === "fulfilled" ? earningsResult.value : null;
       const recomEl = document.getElementById("finvizRecom");
@@ -1788,6 +1794,7 @@ function applySelectedSchwabContract() {
   if (!contract) return;
 
   document.getElementById("expiration").value = expiration;
+  refreshEarningsPreflight();
   document.getElementById("optionType").value = type;
   document.getElementById("strikePrice").value = contract.strike.toFixed(2);
   if (Number.isFinite(contract.bid)) document.getElementById("bid").value = contract.bid.toFixed(2);
