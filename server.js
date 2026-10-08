@@ -444,7 +444,7 @@ const { evaluateBollinger15m } = require("./lib/bollinger15m");
 const signalCache = new Map();
 app.get("/api/signals/:symbol", async (req, res) => {
   const symbol = String(req.params.symbol || "").trim().toUpperCase();
-  if (!/^[A-Z0-9.\\-]{1,12}$/.test(symbol)) return res.status(400).json({error:"Invalid ticker."});
+  if (!/^[A-Z0-9.-]{1,12}$/.test(symbol)) return res.status(400).json({error:"Invalid ticker."});
   const key = process.env.TWELVE_DATA_API_KEY;
   if (!key) return res.status(503).json({error:"Twelve Data is not configured."});
   const cached = signalCache.get(symbol);
