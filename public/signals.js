@@ -95,8 +95,8 @@ async function load() {
     if(!response.ok)throw new Error(data.error||"Data unavailable");
     drawChart(data.candles);
     const markers = selectedInterval === "15min" ? breakoutMarkers(data.candles.slice(-65)) : [];
-    const call100 = markers.some(m => m.index === Math.min(64, data.candles.length - 1) && m.direction === "CALL");
-    const put100 = markers.some(m => m.index === Math.min(64, data.candles.length - 1) && m.direction === "PUT");
+    const call100 = selectedInterval === "15min" && data.signal?.status === "CONFIRMED" && data.signal?.direction === "CALL";
+    const put100 = selectedInterval === "15min" && data.signal?.status === "CONFIRMED" && data.signal?.direction === "PUT";
     const indicator = $("signalBreakout100");
     if (indicator) indicator.textContent = selectedInterval === "15min"
       ? "CALL " + (call100 ? 100 : 0) + " · PUT " + (put100 ? 100 : 0) + " · latest completed candle"
