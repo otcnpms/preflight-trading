@@ -6,6 +6,26 @@ function element(tag, attrs, parent) {
   Object.entries(attrs).forEach(([k,v])=>node.setAttribute(k,String(v)));
   parent.appendChild(node); return node;
 }
+function breakoutMarkers(candles) {
+  const markers = [];
+  let previous = null;
+  for (let i = 20; i < candles.length; i++) {
+    const band = rows => {
+      const mean = rows.reduce((sum, c) => sum + c.close, 0) / 20;
+      const sd = Math.sqrt(rows.reduce((sum, c) => sum + (c.close - mean) ** 2, 0) / 20);
+      return {upper: mean + 2 * sd, lower: mean - 2 * sd, width: mean > 0 ? 4 * sd / mean : 0};
+    };
+    const prior = band(candles.slice(i - 20, i));
+    const current = band(candles.slice(i - 19, i + 1));
+    const direction = candles[i].close > prior.upper ? "CALL"
+      : candles[i].close < prior.lower ? "PUT" : null;
+    const confirmed = direction && prior.width > 0 && current.width / prior.width >= 1.02;
+    if (!confirmed) { previous = null; continue; }
+    markers.push({index: i, direction, first: direction !== previous});
+    previous = direction;
+  }
+  return markers;
+}
 function drawChart(candles) {
   const svg=$("signalChart"); svg.replaceChildren();
   const rows=candles.slice(-65);
@@ -45,6 +65,20 @@ function drawChart(candles) {
     element("rect",{x:cx-width/2,y:Math.min(y(c.open),y(c.close)),width,
       height:Math.max(1,Math.abs(y(c.open)-y(c.close))),fill:color},svg);
   });
+  if (selectedInterval === "15min") {
+    for (const marker of breakoutMarkers(rows).filter(m => m.first)) {
+      const c = rows[marker.index], cx = x(marker.index);
+      const call = marker.direction === "CALL";
+      const cy = call ? Math.min(bottom - 12, y(c.low) + 17) : Math.max(top + 12, y(c.high) - 17);
+      const arrow = element("text", {
+        x: cx, y: cy, fill: call ? "#5fd39a" : "#f07e7e",
+        "font-size": 22, "font-weight": 900, "text-anchor": "middle",
+        stroke: "#07111f", "stroke-width": 2, "paint-order": "stroke"
+      }, svg);
+      arrow.textContent = call ? "↑" : "↓";
+      element("title", {}, arrow).textContent = marker.direction + " confirmed · " + c.datetime;
+    }
+  }
   element("text",{x:left,y:393,fill:"#91a2b8","font-size":11},svg).textContent=rows[0].datetime;
   element("text",{x:right,y:393,fill:"#91a2b8","font-size":11,"text-anchor":"end"},svg).textContent=rows.at(-1).datetime;
 }
@@ -60,6 +94,15 @@ async function load() {
     const data=await response.json();
     if(!response.ok)throw new Error(data.error||"Data unavailable");
     drawChart(data.candles);
+    const markers = selectedInterval === "15min" ? breakoutMarkers(data.candles.slice(-65)) : [];
+    const latestIndex = Math.min(64, data.candles.length - 1);
+    const latest = markers.find(m => m.index === latestIndex);
+    const call100 = latest?.direction === "CALL";
+    const put100 = latest?.direction === "PUT";
+    const indicator = $("signalBreakout100");
+    if (indicator) indicator.textContent = selectedInterval === "15min"
+      ? "CALL " + (call100 ? 100 : 0) + " · PUT " + (put100 ? 100 : 0) + " · latest completed candle"
+      : "CALL/PUT 0–100 available on 15m";
     $("signalTitle").textContent=symbol+" · "+intervalLabels[selectedInterval]+" Candles + BB (20, 2)";
     const s=data.signal || {status:"CONTEXT_ONLY",direction:null};
     selectedTradeDirection = selectedInterval==="15min" && ["CALL","PUT"].includes(s.direction) ? s.direction : null;
