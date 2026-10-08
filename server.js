@@ -497,7 +497,17 @@ app.get("/api/signals/:symbol", async (req, res) => {
       const day=p.year+p.month+p.day, current=today.year+today.month+today.day;
       return day<current || (day===current && (Number(today.hour)*60+Number(today.minute))>=960);
     });
-    const data={symbol,source:"Charles Schwab",interval,candles:completed,signal:interval==="15min"?evaluateBollinger15m(completed):null};
+    const latest=raw.at(-1);
+    const partial=interval==="15min" && latest && new Date(latest.datetime).getTime()+900000>now ? latest : null;
+    const confirmedSignal=interval==="15min"?evaluateBollinger15m(completed):null;
+    const forming=partial && completed.length>=20 ? evaluateBollinger15m([...completed,partial]) : null;
+    const formingSignal=forming?.direction && forming.status==="CONFIRMED"
+      ? {...forming,status:"FORMING"} : null;
+    const signal=formingSignal || confirmedSignal;
+    const signalCandle=formingSignal?partial?.datetime:completed.at(-1)?.datetime;
+    const data={symbol,source:"Charles Schwab",interval,candles:completed,signal,signalCandle,
+      signalIsLive: Boolean(signal?.direction && signalCandle &&
+        now-new Date(signalCandle).getTime() < 30*60*1000)};
     signalCache.set(cacheKey,{at:Date.now(),data});
     res.json(data);
   }catch(err){res.status(502).json({error:err.message||"Schwab candles unavailable."});}
