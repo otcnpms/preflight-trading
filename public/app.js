@@ -56,7 +56,7 @@ document.addEventListener("click", e => {
 
 const coreItems = [
   { id: "fed", title: "FED meeting", detail: "Calendar context for the selected trade date.", mode: "auto" },
-  { id: "earnings", title: "Earnings", detail: "Confirm whether company earnings are relevant to the trade window.", mode: "manual" },
+  { id: "earnings", title: "Earnings", detail: "Reported earnings date and before-open/after-close timing.", mode: "auto" },
   { id: "bollinger", title: "Bollinger context", detail: "15m / 1H / Daily position versus Bollinger midpoint and bands.", mode: "auto" },
   { id: "movingAverages", title: "Moving averages", detail: "15m / 1H / Daily price position versus MA 20 / 40 / 100 / 200.", mode: "auto" },
   { id: "trendline", title: "Trendline / support / resistance", detail: "Visual review of trendlines and key support/resistance.", mode: "manual" },
@@ -68,7 +68,8 @@ const coreItems = [
 const state = {
   checks: Object.fromEntries(coreItems.filter(x => x.mode === "manual").map(x => [x.id, null])),
   autoFacts: Object.fromEntries(coreItems.filter(x => x.mode === "auto").map(x => [x.id, null])),
-  market: null
+  market: null,
+  earnings: null
 };
 
 const fomcMeetings = [
@@ -158,6 +159,21 @@ function fmtInt(v) {
   return Number.isFinite(n) ? n.toLocaleString() : "—";
 }
 
+function refreshEarningsPreflight() {
+  const earnings = state.earnings;
+  const session = String(earnings?.session || "").toUpperCase();
+  const timing = ["BMO", "BO"].includes(session) ? "Before market open"
+    : ["AMC", "AC"].includes(session) ? "After market close"
+    : "Time not confirmed";
+  state.autoFacts.earnings = earnings?.dateText
+    ? "Earnings: " + earnings.dateText + " · " + timing
+    : "Earnings date unavailable · Time not confirmed";
+  renderChecklist();
+}
+document.getElementById("expiration")?.addEventListener("change", refreshEarningsPreflight);
+document.getElementById("expiration")?.addEventListener("input", refreshEarningsPreflight);
+document.getElementById("tradeDate")?.addEventListener("change", refreshEarningsPreflight);
+
 function renderChecklist() {
   list.innerHTML = "";
   for (const item of coreItems) {
@@ -165,13 +181,14 @@ function renderChecklist() {
     row.className = "check-row";
     if (item.mode === "auto") {
       const fact = state.autoFacts[item.id];
+      const approved = Boolean(fact) && (item.id !== "earnings" || Boolean(state.earnings?.dateText && ["BMO","BO","AMC","AC"].includes(String(state.earnings.session || "").toUpperCase())));
       row.innerHTML = `
         <div>
           <div class="check-title">${item.title} <span class="core-mode auto">AUTO</span></div>
           <div class="check-detail">${item.detail}</div>
-          <div class="auto-fact ${fact ? "available" : ""}">${fact || "Waiting for data"}</div>
+          <div class="auto-fact ${approved ? "available" : ""}">${fact || "Waiting for data"}</div>
         </div>
-        <div class="auto-check ${fact ? "done" : ""}">${fact ? "✓" : "—"}</div>`;
+        <div class="auto-check ${approved ? "done" : ""}">${approved ? "✓" : "—"}</div>`;
     } else {
       row.innerHTML = `
         <div>
@@ -202,7 +219,7 @@ function updateStatus() {
   const manualValues = Object.values(state.checks);
   const manualReviewed = manualValues.filter(Boolean).length;
   const autoValues = Object.values(state.autoFacts);
-  const autoReady = autoValues.filter(Boolean).length;
+  const autoReady = autoValues.filter((value,index) => { const key=Object.keys(state.autoFacts)[index]; return Boolean(value) && (key !== "earnings" || Boolean(state.earnings?.dateText && ["BMO","BO","AMC","AC"].includes(String(state.earnings.session || "").toUpperCase()))); }).length;
   const hasFailure = manualValues.includes("fail");
   const allReviewed = manualReviewed === manualValues.length && autoReady === autoValues.length;
   const ready = allReviewed && !hasFailure;
@@ -275,12 +292,15 @@ async function loadMarketData() {
     if (!resp.ok) throw new Error(data.error || "Unable to load market data.");
 
     state.market = data;
+    state.earnings = null;
+    refreshEarningsPreflight();
 
     // Load independent context filters. These are evidence only, never trade recommendations.
     Promise.allSettled([
       fetch(`/api/context/finviz/${encodeURIComponent(symbol)}`).then(r => r.json()),
       fetch(`/api/context/earnings/${encodeURIComponent(symbol)}`).then(r => r.json())
     ]).then(([finvizResult, earningsResult]) => {
+      if (String(state.market?.symbol || "").toUpperCase() !== symbol) return;
       const finviz = finvizResult.status === "fulfilled" ? finvizResult.value : null;
       const earnings = earningsResult.status === "fulfilled" ? earningsResult.value : null;
       const recomEl = document.getElementById("finvizRecom");
@@ -294,6 +314,8 @@ async function loadMarketData() {
       }
       const earningsDateEl = document.getElementById("earningsDate");
       const earningsSourceEl = document.getElementById("earningsSource");
+      state.earnings = earnings?.dateText ? earnings : null;
+      refreshEarningsPreflight();
       if (earningsDateEl) earningsDateEl.textContent = earnings?.display || "Unavailable";
       if (earningsSourceEl) earningsSourceEl.textContent = earnings?.source || "OptionSlam";
     });
@@ -1764,6 +1786,7 @@ function applySelectedSchwabContract() {
   if (!contract) return;
 
   document.getElementById("expiration").value = expiration;
+  refreshEarningsPreflight();
   document.getElementById("optionType").value = type;
   document.getElementById("strikePrice").value = contract.strike.toFixed(2);
   if (Number.isFinite(contract.bid)) document.getElementById("bid").value = contract.bid.toFixed(2);
