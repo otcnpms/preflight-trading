@@ -173,3 +173,13 @@ $("signalScanBoard").addEventListener("click",async()=>{
   btn.disabled=false;scanInProgress=false;
 });
 populateBoards();
+
+// Handoff to the existing Investep trade workflow; never imply a validated entry.
+function updateInvestepHandoff(){
+  const symbol=$("signalTicker").value.trim().toUpperCase();
+  const link=$("investepHandoff");
+  link.href=/^[A-Z0-9.\\-]{1,12}$/.test(symbol)?"/?symbol="+encodeURIComponent(symbol):"/";
+}
+$("signalTicker").addEventListener("input",updateInvestepHandoff);
+$("investepHandoff").addEventListener("click",updateInvestepHandoff);
+updateInvestepHandoff();
