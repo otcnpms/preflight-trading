@@ -2031,3 +2031,9 @@ document.addEventListener("click", e => {
   panel.hidden = !willOpen;
   toggle.textContent = willOpen ? "Hide details" : "Details";
 });
+
+// Scanner-to-Preflight handoff: populate ticker without triggering an options trade.
+const handoffSymbol = new URLSearchParams(window.location.search).get("symbol");
+if (handoffSymbol && /^[A-Z0-9.\\-]{1,12}$/i.test(handoffSymbol)) {
+  document.getElementById("ticker").value = handoffSymbol.toUpperCase();
+}
