@@ -1,0 +1,19 @@
+name: Bollinger scanner validation
+on:
+  pull_request:
+  push:
+    branches:
+      - feature/bollinger-15m-foundation
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: node --test test/bollinger15m.test.js
+      - run: node --check server.js
+      - run: node --check public/signals.js
+      - run: node --check public/app.js
