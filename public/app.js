@@ -56,7 +56,7 @@ document.addEventListener("click", e => {
 
 const coreItems = [
   { id: "fed", title: "FED meeting", detail: "Calendar context for the selected trade date.", mode: "auto" },
-  { id: "earnings", title: "Earnings", detail: "Next earnings versus selected trade and option expiration.", mode: "auto" },
+  { id: "earnings", title: "Earnings", detail: "Reported earnings date and before-open/after-close timing.", mode: "auto" },
   { id: "bollinger", title: "Bollinger context", detail: "15m / 1H / Daily position versus Bollinger midpoint and bands.", mode: "auto" },
   { id: "movingAverages", title: "Moving averages", detail: "15m / 1H / Daily price position versus MA 20 / 40 / 100 / 200.", mode: "auto" },
   { id: "trendline", title: "Trendline / support / resistance", detail: "Visual review of trendlines and key support/resistance.", mode: "manual" },
@@ -161,28 +161,13 @@ function fmtInt(v) {
 
 function refreshEarningsPreflight() {
   const earnings = state.earnings;
-  const tradeDate = document.getElementById("tradeDate")?.value;
-  const expiration = document.getElementById("expiration")?.value;
-  let fact = "VERIFY · Earnings date unavailable";
-  if (earnings?.dateText && tradeDate && expiration && /^\\d{4}-\\d{2}-\\d{2}$/.test(expiration)) {
-    const parsed = new Date(earnings.dateText + " 12:00:00");
-    const date = Number.isFinite(parsed.getTime()) ? [
-      parsed.getFullYear(),String(parsed.getMonth()+1).padStart(2,"0"),String(parsed.getDate()).padStart(2,"0")
-    ].join("-") : null;
-    if (date) {
-      const label = earnings.display || date;
-      fact = expiration < tradeDate
-        ? "VERIFY · Expiration precedes trade date"
-        : date >= tradeDate && date <= expiration
-          ? "CAUTION · Earnings within trade window: " + label
-          : date > expiration
-            ? "PASS · Reported earnings after expiration: " + label
-            : "VERIFY · Reported earnings date is in the past: " + label;
-    }
-  } else if (earnings?.dateText) {
-    fact = "VERIFY · Select option expiration to evaluate earnings: " + earnings.display;
-  }
-  state.autoFacts.earnings = fact;
+  const session = String(earnings?.session || "").toUpperCase();
+  const timing = ["BMO", "BO"].includes(session) ? "Before market open"
+    : ["AMC", "AC"].includes(session) ? "After market close"
+    : "Time not confirmed";
+  state.autoFacts.earnings = earnings?.dateText
+    ? "Earnings: " + earnings.dateText + " · " + timing
+    : "Earnings date unavailable · Time not confirmed";
   renderChecklist();
 }
 document.getElementById("expiration")?.addEventListener("change", refreshEarningsPreflight);
@@ -196,7 +181,7 @@ function renderChecklist() {
     row.className = "check-row";
     if (item.mode === "auto") {
       const fact = state.autoFacts[item.id];
-      const approved = Boolean(fact) && (item.id !== "earnings" || String(fact).startsWith("PASS"));
+      const approved = Boolean(fact) && (item.id !== "earnings" || Boolean(state.earnings?.dateText && ["BMO","BO","AMC","AC"].includes(String(state.earnings.session || "").toUpperCase())));
       row.innerHTML = `
         <div>
           <div class="check-title">${item.title} <span class="core-mode auto">AUTO</span></div>
@@ -234,8 +219,8 @@ function updateStatus() {
   const manualValues = Object.values(state.checks);
   const manualReviewed = manualValues.filter(Boolean).length;
   const autoValues = Object.values(state.autoFacts);
-  const autoReady = autoValues.filter((value,index) => { const key=Object.keys(state.autoFacts)[index]; return Boolean(value) && (key !== "earnings" || String(value).startsWith("PASS")); }).length;
-  const hasFailure = manualValues.includes("fail") || String(state.autoFacts.earnings || "").startsWith("CAUTION");
+  const autoReady = autoValues.filter((value,index) => { const key=Object.keys(state.autoFacts)[index]; return Boolean(value) && (key !== "earnings" || Boolean(state.earnings?.dateText && ["BMO","BO","AMC","AC"].includes(String(state.earnings.session || "").toUpperCase()))); }).length;
+  const hasFailure = manualValues.includes("fail");
   const allReviewed = manualReviewed === manualValues.length && autoReady === autoValues.length;
   const ready = allReviewed && !hasFailure;
 
