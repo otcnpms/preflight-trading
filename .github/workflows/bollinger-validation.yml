@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm ci
+      - run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
       - run: node --test test/bollinger15m.test.js
       - run: node --check server.js
       - run: node --check public/signals.js
