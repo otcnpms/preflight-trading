@@ -762,7 +762,9 @@ function renderOpportunityBoard() {
   });
   const v=document.getElementById("oppVisual"), d=document.getElementById("oppDeveloping"), n=document.getElementById("oppNone"), b=document.getElementById("oppBatch");
   if(v) v.textContent=String(visual); if(d) d.textContent=String(developing); if(n) n.textContent=String(none);
-  const last=localStorage.getItem("preflightLastBatchScan"); if(b) b.textContent=last ? formatScanTime(last) : "—";
+  const last=localStorage.getItem("preflightLastBatchScan");
+  const stale=watchSymbols.some(symbol => !watchResults[symbol]?.checkedAt || Date.now()-new Date(watchResults[symbol].checkedAt).getTime()>15*60*1000);
+  if(b) b.textContent=last ? formatScanTime(last)+(stale ? " · STALE" : "") : "Not completed";
 }
 function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
 
@@ -836,11 +838,16 @@ async function scanAllWatchlist() {
   const symbols=[...watchSymbols];
   for(let i=0;i<symbols.length;i++){
     await checkWatchSymbol(symbols[i]);
-    if(i<symbols.length-1) await sleep(31000);
+    // Schwab-backed scans do not need the legacy Twelve Data 31-second pause.
+    // Keep requests sequential to avoid bursts against Schwab rate limits.
   }
   const now=new Date().toISOString();
-  localStorage.setItem("preflightLastBatchScan",now);
+  const failures=symbols.filter(symbol => watchResults[symbol]?.lastError || watchResults[symbol]?.error);
+  if (!failures.length) localStorage.setItem("preflightLastBatchScan",now);
+  else localStorage.removeItem("preflightLastBatchScan");
   renderOpportunityBoard();
+  if (failures.length) btn.title="Scan incomplete: "+failures.join(", ");
+  else btn.title="All "+symbols.length+" symbols scanned successfully.";
   btn.disabled=false; btn.textContent=t("scanAll");
 }
 document.getElementById("scanAllBtn").addEventListener("click", scanAllWatchlist);
