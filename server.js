@@ -484,9 +484,19 @@ app.get("/api/signals/:symbol", async (req, res) => {
       candles=[...groups.values()].filter(c=>c.count===2).map(({count,...c})=>c);
     }
     const now=Date.now();
-    const duration=interval==="1day"?86400000:interval==="1h"?3600000:900000;
-    // Drop only a bar still in progress; never discard an already completed last bar.
-    const completed=candles.filter(c=>new Date(c.datetime).getTime()+duration<=now);
+    const eastern=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+    const parts=d=>Object.fromEntries(eastern.formatToParts(d).filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
+    const today=parts(new Date(now));
+    // Schwab daily bars are timestamped at the session start; a completed
+    // prior trading day must not be removed by a rolling 24-hour cutoff.
+    const completed=candles.filter(c=>{
+      const stamp=new Date(c.datetime).getTime();
+      if(interval==="15min")return stamp+900000<=now;
+      if(interval==="1h")return stamp+3600000<=now;
+      const p=parts(new Date(stamp));
+      const day=p.year+p.month+p.day, current=today.year+today.month+today.day;
+      return day<current || (day===current && (Number(today.hour)*60+Number(today.minute))>=960);
+    });
     const data={symbol,source:"Charles Schwab",interval,candles:completed,signal:interval==="15min"?evaluateBollinger15m(completed):null};
     signalCache.set(cacheKey,{at:Date.now(),data});
     res.json(data);
