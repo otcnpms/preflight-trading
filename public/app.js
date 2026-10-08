@@ -56,7 +56,7 @@ document.addEventListener("click", e => {
 
 const coreItems = [
   { id: "fed", title: "FED meeting", detail: "Calendar context for the selected trade date.", mode: "auto" },
-  { id: "earnings", title: "Earnings", detail: "Confirm whether company earnings are relevant to the trade window.", mode: "manual" },
+  { id: "earnings", title: "Earnings", detail: "Next earnings versus selected trade and option expiration.", mode: "auto" },
   { id: "bollinger", title: "Bollinger context", detail: "15m / 1H / Daily position versus Bollinger midpoint and bands.", mode: "auto" },
   { id: "movingAverages", title: "Moving averages", detail: "15m / 1H / Daily price position versus MA 20 / 40 / 100 / 200.", mode: "auto" },
   { id: "trendline", title: "Trendline / support / resistance", detail: "Visual review of trendlines and key support/resistance.", mode: "manual" },
@@ -68,7 +68,8 @@ const coreItems = [
 const state = {
   checks: Object.fromEntries(coreItems.filter(x => x.mode === "manual").map(x => [x.id, null])),
   autoFacts: Object.fromEntries(coreItems.filter(x => x.mode === "auto").map(x => [x.id, null])),
-  market: null
+  market: null,
+  earnings: null
 };
 
 const fomcMeetings = [
@@ -157,6 +158,31 @@ function fmtInt(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n.toLocaleString() : "—";
 }
+
+function refreshEarningsPreflight() {
+  const earnings = state.earnings;
+  const tradeDate = document.getElementById("tradeDate")?.value;
+  const expiration = document.getElementById("expiration")?.value;
+  let fact = "VERIFY · Earnings date unavailable";
+  if (earnings?.dateText && tradeDate && expiration && /^\\d{4}-\\d{2}-\\d{2}$/.test(expiration)) {
+    const parsed = new Date(earnings.dateText + " 12:00:00");
+    const date = Number.isFinite(parsed.getTime()) ? [
+      parsed.getFullYear(),String(parsed.getMonth()+1).padStart(2,"0"),String(parsed.getDate()).padStart(2,"0")
+    ].join("-") : null;
+    if (date) {
+      const label = earnings.display || date;
+      fact = date >= tradeDate && date <= expiration
+        ? "CAUTION · Earnings within trade window: " + label
+        : "VERIFY · Reported earnings " + label + " (confirm date/session)";
+    }
+  } else if (earnings?.dateText) {
+    fact = "VERIFY · Select option expiration to evaluate earnings: " + earnings.display;
+  }
+  state.autoFacts.earnings = fact;
+  renderChecklist();
+}
+document.getElementById("expiration")?.addEventListener("change", refreshEarningsPreflight);
+document.getElementById("tradeDate")?.addEventListener("change", refreshEarningsPreflight);
 
 function renderChecklist() {
   list.innerHTML = "";
@@ -275,6 +301,8 @@ async function loadMarketData() {
     if (!resp.ok) throw new Error(data.error || "Unable to load market data.");
 
     state.market = data;
+    state.earnings = null;
+    refreshEarningsPreflight();
 
     // Load independent context filters. These are evidence only, never trade recommendations.
     Promise.allSettled([
@@ -294,6 +322,8 @@ async function loadMarketData() {
       }
       const earningsDateEl = document.getElementById("earningsDate");
       const earningsSourceEl = document.getElementById("earningsSource");
+      state.earnings = earnings?.dateText ? earnings : null;
+      refreshEarningsPreflight();
       if (earningsDateEl) earningsDateEl.textContent = earnings?.display || "Unavailable";
       if (earningsSourceEl) earningsSourceEl.textContent = earnings?.source || "OptionSlam";
     });
