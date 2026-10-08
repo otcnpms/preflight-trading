@@ -48,16 +48,18 @@ function drawChart(candles) {
   element("text",{x:left,y:393,fill:"#91a2b8","font-size":11},svg).textContent=rows[0].datetime;
   element("text",{x:right,y:393,fill:"#91a2b8","font-size":11,"text-anchor":"end"},svg).textContent=rows.at(-1).datetime;
 }
+let selectedInterval="15min";
+const intervalLabels={"1day":"D","1h":"1H","15min":"15m"};
 async function load() {
   const symbol=$("signalTicker").value.trim().toUpperCase();
   if(!/^[A-Z0-9.\-]{1,12}$/.test(symbol)){$("signalStatus").textContent="Enter a valid ticker.";return;}
   $("signalLoad").disabled=true;$("signalStatus").textContent="Loading...";
   try{
-    const response=await fetch("/api/signals/"+encodeURIComponent(symbol),{cache:"no-store"});
+    const response=await fetch("/api/signals/"+encodeURIComponent(symbol)+"?interval="+encodeURIComponent(selectedInterval),{cache:"no-store"});
     const data=await response.json();
     if(!response.ok)throw new Error(data.error||"Data unavailable");
     drawChart(data.candles);
-    $("signalTitle").textContent=symbol+" · 15m Candles + BB (20, 2)";
+    $("signalTitle").textContent=symbol+" · "+intervalLabels[selectedInterval]+" Candles + BB (20, 2)";
     const s=data.signal;
     $("signalDirection").textContent=s.status==="CONFIRMED"?s.direction+" · CONFIRMED":s.status==="UNCONFIRMED"?s.direction+" · UNCONFIRMED":s.status.replaceAll("_"," ");
     $("signalDirection").className="signal-state "+(s.direction||"").toLowerCase();
@@ -69,6 +71,11 @@ async function load() {
   }catch(err){$("signalStatus").textContent=err.message;$("signalDirection").textContent="UNAVAILABLE";}
   finally{$("signalLoad").disabled=false;}
 }
+document.querySelectorAll("[data-interval]").forEach(button=>button.addEventListener("click",()=>{
+  selectedInterval=button.dataset.interval;
+  document.querySelectorAll("[data-interval]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));
+  load();
+}));
 $("signalLoad").addEventListener("click",load);
 $("signalTicker").addEventListener("keydown",e=>{if(e.key==="Enter")load();});
 
