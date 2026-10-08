@@ -27,6 +27,13 @@ function drawChart(candles) {
     element("line",{x1:left,y1:py,x2:right,y2:py,stroke:"#223955","stroke-width":1},svg);
     element("text",{x:5,y:py+4,fill:"#91a2b8","font-size":11},svg).textContent=price.toFixed(2);
   }
+  // Subtle white volatility envelope, behind band outlines and candles.
+  const valid=bands.map((b,i)=>b?{b,i}:null).filter(Boolean);
+  if(valid.length>1){
+    const upper=valid.map(({b,i})=>`${x(i)},${y(b.upper)}`);
+    const lower=valid.slice().reverse().map(({b,i})=>`${x(i)},${y(b.lower)}`);
+    element("polygon",{points:[...upper,...lower].join(" "),fill:"#ffffff","fill-opacity":0.09,stroke:"none"},svg);
+  }
   for(const [field,color] of [["upper","#d7aa46"],["middle","#7b91ac"],["lower","#d7aa46"]]){
     const points=bands.map((b,i)=>b?`${x(i)},${y(b[field])}`:null).filter(Boolean).join(" ");
     element("polyline",{points,fill:"none",stroke:color,"stroke-width":1.7},svg);
@@ -64,3 +71,10 @@ async function load() {
 }
 $("signalLoad").addEventListener("click",load);
 $("signalTicker").addEventListener("keydown",e=>{if(e.key==="Enter")load();});
+
+const params=new URLSearchParams(location.search);
+const initialSymbol=params.get("symbol");
+if(initialSymbol && /^[A-Z0-9.\\-]{1,12}$/i.test(initialSymbol)){
+  $("signalTicker").value=initialSymbol.toUpperCase();
+  load();
+}
