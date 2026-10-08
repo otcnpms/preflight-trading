@@ -439,6 +439,39 @@ app.get("/api/market/:symbol", async (req, res) => {
   }
 });
 
+
+const { evaluateBollinger15m } = require("./lib/bollinger15m");
+const signalCache = new Map();
+app.get("/api/signals/:symbol", async (req, res) => {
+  const symbol = String(req.params.symbol || "").trim().toUpperCase();
+  if (!/^[A-Z0-9.\\-]{1,12}$/.test(symbol)) return res.status(400).json({error:"Invalid ticker."});
+  const key = process.env.TWELVE_DATA_API_KEY;
+  if (!key) return res.status(503).json({error:"Twelve Data is not configured."});
+  const cached = signalCache.get(symbol);
+  if (cached && Date.now()-cached.at < 60000) return res.json(cached.data);
+  try {
+    const url = new URL("https://api.twelvedata.com/time_series");
+    url.searchParams.set("symbol",symbol);
+    url.searchParams.set("interval","15min");
+    url.searchParams.set("outputsize","120");
+    url.searchParams.set("apikey",key);
+    const response = await fetch(url);
+    const payload = await response.json();
+    if (!response.ok || payload.status === "error" || !Array.isArray(payload.values))
+      throw new Error(payload.message || "15m candles unavailable.");
+    const candles = payload.values.map(v=>({
+      datetime:v.datetime,open:Number(v.open),high:Number(v.high),
+      low:Number(v.low),close:Number(v.close),volume:Number(v.volume)
+    })).sort((a,b)=>a.datetime.localeCompare(b.datetime));
+    // Twelve Data may include an in-progress bar: conservatively omit newest.
+    const completed = candles.slice(0,-1);
+    const data = {symbol,source:"Twelve Data",interval:"15min",
+      candles:completed, signal:evaluateBollinger15m(completed)};
+    signalCache.set(symbol,{at:Date.now(),data});
+    res.json(data);
+  } catch (err) { res.status(502).json({error:err.message || "Signal data unavailable."}); }
+});
+
 app.use((_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
