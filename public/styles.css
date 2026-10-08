@@ -414,3 +414,15 @@ body.modal-open { overflow: hidden; }
   .range-automation-metrics{grid-template-columns:1fr}
   .range-automation-head{align-items:center}
 }
+
+/* Compact market toolbar: connection management is secondary to trading. */
+.compact-market-toolbar { padding: 14px 18px; }
+.compact-market-toolbar .ticker-grid { align-items:end; }
+.compact-market-toolbar .compact-market-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px 16px; margin-top:8px; }
+.compact-market-toolbar .market-message { margin:0; font-size:12px; }
+.compact-market-toolbar .schwab-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+.compact-market-toolbar .schwab-provider { color:var(--gold); font-size:10px; font-weight:800; letter-spacing:.12em; }
+.compact-market-toolbar #schwabTestBtn,.compact-market-toolbar #schwabOptionsTestBtn,.compact-market-toolbar #schwabDisconnectBtn { display:none !important; }
+.compact-market-toolbar .schwab-connect-btn { font-size:12px; padding:7px 12px; }
+.compact-market-toolbar .schwab-status { font-size:11px; }
+@media (max-width:700px) { .compact-market-toolbar .compact-market-footer { align-items:flex-start; } .compact-market-toolbar .schwab-actions { justify-content:flex-start; } }
