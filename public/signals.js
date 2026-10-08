@@ -99,8 +99,16 @@ function populateBoards(){
   if(boards.some(b=>b.id===active))select.value=active;
   if(!boards.length)$("signalScanProgress").textContent="No saved watchlists in this browser. Create one in Preflight first.";
 }
-let autoWatchTimer=null,scanInProgress=false,soundEnabled=false;
+let autoWatchTimer=null,scanInProgress=false,soundEnabled=false,nextScanAt=0;
 const seenAlerts=new Set();
+function refreshWatchIndicators(){
+  const active=Boolean(autoWatchTimer);
+  $("signalWatchHealth").textContent=active?"● LIVE":"○ IDLE";
+  $("signalWatchHealth").classList.toggle("active",active);
+  $("signalWatchHealth").title=active?"Auto-watch enabled; checks every 60 seconds":"Auto-watch stopped";
+  $("signalNextScan").textContent=active?Math.max(0,Math.ceil((nextScanAt-Date.now())/1000))+"s":"—";
+}
+setInterval(refreshWatchIndicators,1000);
 let audioContext=null;
 function playSignalTone(){
   if(!soundEnabled)return;
@@ -134,9 +142,10 @@ $("signalAlertSound").addEventListener("click",async()=>{
 });
 $("signalAutoWatch").addEventListener("click",()=>{
   if(autoWatchTimer){clearInterval(autoWatchTimer);autoWatchTimer=null;}
-  else { $("signalScanBoard").click();autoWatchTimer=setInterval(()=>{if(!scanInProgress)$("signalScanBoard").click();},60000); }
+  else { $("signalScanBoard").click();nextScanAt=Date.now()+60000;autoWatchTimer=setInterval(()=>{nextScanAt=Date.now()+60000;if(!scanInProgress)$("signalScanBoard").click();},60000); }
   $("signalAutoWatch").textContent=autoWatchTimer?"Stop auto-watch":"Start auto-watch";
   $("signalAutoWatch").setAttribute("aria-pressed",String(Boolean(autoWatchTimer)));
+  refreshWatchIndicators();
 });
 $("signalScanBoard").addEventListener("click",async()=>{
   const board=savedBoards().find(b=>b.id===$("signalBoard").value);
@@ -159,7 +168,8 @@ $("signalScanBoard").addEventListener("click",async()=>{
       alertSignal(symbol,data);
     }catch(err){status.textContent=err.message;}
   }
-  $("signalScanProgress").textContent="Scan complete · "+board.symbols.length+" symbols. Results are snapshots, not continuous alerts.";
+  $("signalScanProgress").textContent=board.symbols.length+" symbols";
+  $("signalLastScan").textContent="↻ "+new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
   btn.disabled=false;scanInProgress=false;
 });
 populateBoards();
