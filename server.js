@@ -303,7 +303,9 @@ app.get("/api/market/:symbol", async (req, res) => {
   if (!/^[A-Z0-9.\\-]{1,12}$/.test(symbol)) return res.status(400).json({ error: "Invalid ticker symbol." });
   const bundle = await getSchwabTokens(req, res);
   if (!bundle) return res.status(401).json({ error: "Connect Schwab to load market data." });
-  const cached = marketCache.get(symbol);
+  // Quote data is session-scoped; do not share a cached result across Schwab accounts.
+  const cacheKey = symbol + ":" + bundle.access_token;
+  const cached = marketCache.get(cacheKey);
   if (cached && Date.now() - cached.time < CACHE_MS) return res.json({ ...cached.data, cached: true });
   const headers = { Authorization: "Bearer " + bundle.access_token, Accept: "application/json" };
   const historyUrl = (frequencyType, frequency, periodType, period) => {
@@ -328,7 +330,8 @@ app.get("/api/market/:symbol", async (req, res) => {
         error: payloads[i].message || payloads[i].error || "Schwab market data unavailable."
       });
     }
-    const item = payloads[0][symbol] || payloads[0][Object.keys(payloads[0])[0]] || {};
+    const item = payloads[0][symbol];
+    if (!item || item.symbol !== symbol || !item.quote) throw new Error("Schwab quote missing for requested ticker.");
     const quote = item.quote || {};
     const parseBars = payload => {
       if (!Array.isArray(payload.candles)) return [];
@@ -368,7 +371,7 @@ app.get("/api/market/:symbol", async (req, res) => {
     const change = price - previousClose;
     const data = {
       symbol, name:item.description || null, exchange:item.exchange || null, currency:"USD",
-      datetime:quote.quoteTime ? new Date(quote.quoteTime).toISOString() : null,
+      datetime:Number.isFinite(Number(quote.quoteTime)) && Number(quote.quoteTime)>0 ? new Date(Number(quote.quoteTime)).toISOString() : null,
       price, open, high:Number(quote.highPrice), low:Number(quote.lowPrice), previousClose,
       change, percentChange:previousClose > 0 ? change/previousClose*100 : null,
       volume:Number(quote.totalVolume), gapPct:previousClose > 0 ? (open-previousClose)/previousClose*100 : null,
@@ -377,7 +380,7 @@ app.get("/api/market/:symbol", async (req, res) => {
       timeframes:{ min15:min15Summary, hour1:hourSummary, daily:dailySummary },
       source:"Charles Schwab", realtime:item.realtime ?? null, cached:false
     };
-    marketCache.set(symbol,{time:Date.now(),data});
+    marketCache.set(cacheKey,{time:Date.now(),data});
     res.json(data);
   } catch (err) {
     console.error("Schwab market data error:",err);
