@@ -60,10 +60,10 @@ async function load() {
     if(!response.ok)throw new Error(data.error||"Data unavailable");
     drawChart(data.candles);
     $("signalTitle").textContent=symbol+" · "+intervalLabels[selectedInterval]+" Candles + BB (20, 2)";
-    const s=data.signal;
+    const s=data.signal || {status:"CONTEXT_ONLY",direction:null};
     $("signalDirection").textContent=s.status==="CONFIRMED"?s.direction+" · CONFIRMED":s.status==="UNCONFIRMED"?s.direction+" · UNCONFIRMED":s.status.replaceAll("_"," ");
     $("signalDirection").className="signal-state "+(s.direction||"").toLowerCase();
-    $("signalExplanation").textContent=s.status==="CONFIRMED"?"Historical candle meets breakout, volume and expansion thresholds.":s.status==="UNCONFIRMED"?"Breakout detected but filters did not all pass.":"No confirmed breakout in latest completed candle.";
+    $("signalExplanation").textContent=s.status==="CONTEXT_ONLY"?"Signal detection remains on 15m. This timeframe is for context.":s.status==="CONFIRMED"?"Historical candle meets breakout, volume and expansion thresholds.":s.status==="UNCONFIRMED"?"Breakout detected but filters did not all pass.":"No confirmed breakout in latest completed candle.";
     $("signalVolume").textContent=Number.isFinite(s.volumeRatio)?s.volumeRatio.toFixed(2)+"×":"—";
     $("signalExpansion").textContent=Number.isFinite(s.widthRatio)?s.widthRatio.toFixed(2)+"×":"—";
     $("signalSource").textContent=data.source;
@@ -85,3 +85,38 @@ if(initialSymbol && /^[A-Z0-9.\\-]{1,12}$/i.test(initialSymbol)){
   $("signalTicker").value=initialSymbol.toUpperCase();
   load();
 }
+
+function savedBoards(){
+  try {const b=JSON.parse(localStorage.getItem("preflightWatchBoards")||"[]");
+    return Array.isArray(b)?b.filter(x=>x&&typeof x.name==="string"&&Array.isArray(x.symbols)):[];
+  }catch{return [];}
+}
+function populateBoards(){
+  const select=$("signalBoard"),boards=savedBoards();
+  select.replaceChildren();
+  for(const b of boards){const option=document.createElement("option");option.value=b.id;option.textContent=b.name+" ("+b.symbols.length+")";select.appendChild(option);}
+  const active=localStorage.getItem("preflightActiveWatchBoard");
+  if(boards.some(b=>b.id===active))select.value=active;
+  if(!boards.length)$("signalScanProgress").textContent="No saved watchlists in this browser. Create one in Preflight first.";
+}
+$("signalScanBoard").addEventListener("click",async()=>{
+  const board=savedBoards().find(b=>b.id===$("signalBoard").value);
+  if(!board)return;
+  const btn=$("signalScanBoard");btn.disabled=true;
+  $("signalScanResults").replaceChildren();
+  for(const [i,symbol] of board.symbols.entries()){
+    $("signalScanProgress").textContent="Scanning "+(i+1)+"/"+board.symbols.length+" · "+symbol;
+    const line=document.createElement("div");line.className="data-line";
+    const link=document.createElement("button");link.type="button";link.className="secondary";link.textContent=symbol;
+    link.addEventListener("click",()=>{$("signalTicker").value=symbol;selectedInterval="15min";document.querySelectorAll("[data-interval]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.interval==="15min")));load();});
+    const status=document.createElement("strong");status.textContent="Checking…";
+    line.append(link,status);$("signalScanResults").appendChild(line);
+    try{const res=await fetch("/api/signals/"+encodeURIComponent(symbol)+"?interval=15min",{cache:"no-store"});
+      const data=await res.json();if(!res.ok)throw Error(data.error||"Unavailable");
+      status.textContent=data.signal?.direction?data.signal.direction+" · "+data.signal.status:data.signal?.status||"NO SIGNAL";
+    }catch(err){status.textContent=err.message;}
+  }
+  $("signalScanProgress").textContent="Scan complete · "+board.symbols.length+" symbols. Results are snapshots, not continuous alerts.";
+  btn.disabled=false;
+});
+populateBoards();
