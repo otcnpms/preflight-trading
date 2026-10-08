@@ -7,11 +7,11 @@
 .signal-controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
 .signal-controls label{max-width:180px}.signal-state{font-size:18px;font-weight:800}
 .signal-state.call{color:#5fd39a}.signal-state.put{color:#f07e7e}
-.signal-legend{display:flex;gap:18px;color:#91a2b8;font-size:12px;flex-wrap:wrap}
+.timeframe-tabs{display:flex;gap:6px;align-items:center}.timeframe-tabs button{padding:8px 14px;border:1px solid #34506e;border-radius:8px;background:#0e2035;color:#d7e3f4;cursor:pointer}.timeframe-tabs button[aria-pressed="true"]{background:#d7aa46;color:#07111f;border-color:#d7aa46;font-weight:800}.signal-legend{display:flex;gap:18px;color:#91a2b8;font-size:12px;flex-wrap:wrap}
 @media(max-width:760px){.signal-layout{grid-template-columns:1fr}}
 </style></head><body><main class="shell">
 <header class="topbar"><div><p class="eyebrow">EXPERIMENTAL / 15 MINUTES</p><h1>Bollinger Signals</h1><p class="sub">Visual breakout observations · not trade instructions</p></div><a class="secondary" href="/">← PreFlight</a></header>
-<section class="card"><div class="signal-controls"><label>Ticker<input id="signalTicker" maxlength="12" value="SPY" autocomplete="off"></label><button class="primary" id="signalLoad">Load 15m chart</button><span id="signalStatus" class="muted" role="status">Enter a ticker to begin.</span></div></section>
+<section class="card"><div class="signal-controls"><label>Ticker<input id="signalTicker" maxlength="12" value="SPY" autocomplete="off"></label><div class="timeframe-tabs" role="group" aria-label="Chart timeframe"><button type="button" data-interval="1day" aria-pressed="false">D</button><button type="button" data-interval="1h" aria-pressed="false">1H</button><button type="button" data-interval="15min" aria-pressed="true">15m</button></div><button class="primary" id="signalLoad">Load chart</button><span id="signalStatus" class="muted" role="status">Enter a ticker to begin.</span></div></section>
 <div class="signal-layout"><section class="card"><div class="section-head"><div><p class="step">PRICE ACTION</p><h2 id="signalTitle">15m Candles + BB (20, 2)</h2></div><span class="counter">Historical candles</span></div>
 <svg id="signalChart" class="signal-chart" viewBox="0 0 820 410" role="img" aria-label="Historical 15-minute candles and Bollinger bands"><text x="30" y="200" fill="#91a2b8">Load a symbol to view the chart</text></svg>
 <div class="signal-legend"><span>● Upper / lower bands</span><span>● Middle band</span><span>▮ Candles</span></div>
