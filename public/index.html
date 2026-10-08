@@ -25,24 +25,17 @@
       </div>
     </header>
 
-    <section class="card setup">
+    <section class="card setup compact-market-toolbar">
       <div class="grid ticker-grid">
         <label><span data-i18n="ticker">Ticker</span><input id="ticker" placeholder="SPY" autocomplete="off" /></label>
         <label><span data-i18n="date">Date</span><input id="tradeDate" type="date" /></label>
         <label><span data-i18n="priceRange">Price Range</span><input id="priceRange" placeholder="Optional" data-i18n-placeholder="optional" /></label>
         <div class="load-wrap"><button class="primary" id="loadMarketBtn" data-i18n="loadMarketData">Load Market Data</button></div>
       </div>
-      <p class="market-message muted" id="marketMessage" data-i18n="enterTickerLoad">Enter a ticker and load market data.</p>
-    </section>
-
-    <section class="card schwab-card">
-      <div class="schwab-connect-row">
-        <div>
-          <p class="step">SCHWAB MARKET DATA</p>
-          <h2 id="schwabTitle">Broker Data Connection</h2>
-          <p class="muted schwab-copy" id="schwabCopy">Connect your Schwab account to test quotes and options-chain access.</p>
-        </div>
+      <div class="compact-market-footer">
+        <p class="market-message muted" id="marketMessage" data-i18n="enterTickerLoad">Enter a ticker and load market data.</p>
         <div class="schwab-actions">
+          <span class="schwab-provider">SCHWAB</span>
           <span class="schwab-status" id="schwabStatus">Checking…</span>
           <a class="primary schwab-connect-btn" id="schwabConnectBtn" href="/auth/schwab/start">Connect Schwab</a>
           <button class="secondary" id="schwabTestBtn" type="button" hidden>Test SPY Quote</button>
@@ -58,7 +51,7 @@
         <div>
           <p class="step" data-i18n="preflightWatch">PRE-FLIGHT WATCH</p>
           <h2 data-i18n="watchlistScanner">Watchlist Scanner</h2>
-          <p class="muted watch-help" data-i18n="watchHelp">Check one ticker at a time for objective events. This keeps usage inside the current Twelve Data limits.</p>
+          <p class="muted watch-help" data-i18n="watchHelp">Scan watchlist tickers using connected Schwab market data.</p>
         </div>
         <div class="watch-head-actions">
           <span class="counter" id="watchUsage" data-i18n="manualScan">Manual scan</span>
@@ -136,7 +129,7 @@
           <div class="data-line"><span data-i18n="upper">Upper</span><strong id="bbUpper">—</strong></div>
           <div class="data-line"><span data-i18n="midpoint">Midpoint</span><strong id="bbMiddle">—</strong></div>
           <div class="data-line"><span data-i18n="lower">Lower</span><strong id="bbLower">—</strong></div>
-          <div class="data-line"><span data-i18n="source">Source</span><strong>Twelve Data</strong></div>
+          <div class="data-line"><span data-i18n="source">Source</span><strong>Charles Schwab</strong></div>
         </div>
       </div>
 
