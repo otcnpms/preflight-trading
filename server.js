@@ -408,6 +408,9 @@ app.get("/api/signals/:symbol", async (req, res) => {
     url.searchParams.set("frequencyType",interval==="1day"?"daily":"minute");
     url.searchParams.set("frequency",interval==="1day"?"1":interval==="1h"?"30":"15");
     url.searchParams.set("needExtendedHoursData","false");
+    // Schwab defaults an omitted endDate to the previous business day close.
+    // Request through now so the current trading session is included.
+    if(interval!=="1day")url.searchParams.set("endDate",String(Date.now()));
     const response = await fetch(url,{headers:{Authorization:"Bearer "+bundle.access_token,Accept:"application/json"}});
     const payload = await response.json().catch(()=>({}));
     if(!response.ok || !Array.isArray(payload.candles))
