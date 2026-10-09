@@ -34,9 +34,9 @@ const chartET = datetime => {
     year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short"
   }).format(date);
 };
-function drawChart(candles) {
+function drawChart(candles, formingCandle = null) {
   const svg=$("signalChart"); svg.replaceChildren();
-  const rows=candles.slice(-65);
+  const rows=[...candles, ...(formingCandle ? [formingCandle] : [])].slice(-65);
   if(rows.length<21) { element("text",{x:25,y:200,fill:"#91a2b8"},svg).textContent="Not enough completed candles.";return; }
   const bands=rows.map((_,i)=>{
     const window=rows.slice(Math.max(0,i-19),i+1);
@@ -69,19 +69,22 @@ function drawChart(candles) {
   const width=Math.max(2,(right-left)/rows.length*.54);
   rows.forEach((c,i)=>{
     const color=c.close>=c.open?"#5fd39a":"#f07e7e",cx=x(i);
+    const provisional=Boolean(formingCandle && i===rows.length-1);
     const candleGroup = element("g",{},svg);
     element("line",{x1:cx,y1:y(c.high),x2:cx,y2:y(c.low),stroke:color,"stroke-width":1.5},candleGroup);
     element("rect",{x:cx-width/2,y:Math.min(y(c.open),y(c.close)),width,
-      height:Math.max(1,Math.abs(y(c.open)-y(c.close))),fill:color},candleGroup);
+      height:Math.max(1,Math.abs(y(c.open)-y(c.close))),fill:color,
+      "fill-opacity":provisional?0.45:1,stroke:provisional?color:"none",
+      "stroke-dasharray":provisional?"3 2":"none"},candleGroup);
     element("rect",{x:cx-Math.max(5,width/2),y:top,width:Math.max(10,width),
       height:bottom-top,fill:"transparent"},candleGroup);
     element("title",{},candleGroup).textContent =
-      chartET(c.datetime) + " | O " + c.open.toFixed(2) +
+      (provisional ? "PROVISIONAL SCHWAB BAR · " : "") + chartET(c.datetime) + " | O " + c.open.toFixed(2) +
       " H " + c.high.toFixed(2) + " L " + c.low.toFixed(2) +
       " C " + c.close.toFixed(2) + " | Volume " + Number(c.volume).toLocaleString("en-US");
   });
   if (selectedInterval === "15min") {
-    for (const marker of breakoutMarkers(rows).filter(m => m.first)) {
+    for (const marker of breakoutMarkers(formingCandle ? rows.slice(0,-1) : rows).filter(m => m.first)) {
       const c = rows[marker.index], cx = x(marker.index);
       const call = marker.direction === "CALL";
       const cy = call ? Math.min(bottom - 16, y(c.low) + 19) : Math.max(top + 16, y(c.high) - 19);
@@ -122,7 +125,7 @@ async function load() {
     const response=await fetch("/api/signals/"+encodeURIComponent(symbol)+"?interval="+encodeURIComponent(selectedInterval),{cache:"no-store"});
     const data=await response.json();
     if(!response.ok)throw new Error(data.error||"Data unavailable");
-    drawChart(data.candles);
+    drawChart(data.candles, selectedInterval === "15min" ? data.formingCandle : null);
     const markers = selectedInterval === "15min" && !data.dataStale ? breakoutMarkers(data.candles.slice(-65)) : [];
     const latestIndex = Math.min(64, data.candles.length - 1);
     const latest = markers.find(m => m.index === latestIndex);
@@ -142,7 +145,7 @@ async function load() {
     $("signalVolume").textContent=Number.isFinite(s.volumeRatio)?s.volumeRatio.toFixed(2)+"×":"—";
     $("signalExpansion").textContent=Number.isFinite(s.widthRatio)?s.widthRatio.toFixed(2)+"×":"—";
     $("signalSource").textContent=data.source;
-    $("signalStatus").textContent="Loaded "+data.candles.length+" completed candles. Latest: "+(data.lastCandleAt?chartET(data.lastCandleAt):"none")+(data.dataStale?" · STALE DATA (expected "+data.expectedSession+" ET)":"");
+    $("signalStatus").textContent="Loaded "+data.candles.length+" completed candles. Latest: "+(data.lastCandleAt?chartET(data.lastCandleAt):"none")+(data.formingCandle?" · PROVISIONAL "+chartET(data.formingCandle.datetime)+" (Schwab snapshot, not streaming)":"")+(data.dataStale?" · STALE DATA (expected "+data.expectedSession+" ET)":"");
   }catch(err){$("signalStatus").textContent=err.message;$("signalDirection").textContent="UNAVAILABLE";}
   finally{$("signalLoad").disabled=false;}
 }

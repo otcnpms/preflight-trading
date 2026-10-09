@@ -475,7 +475,7 @@ app.get("/api/signals/:symbol", async (req, res) => {
     const stale=interval==="15min" && (!latestSession || latestSession<expectedSession);
     const signal=stale?{status:"STALE_DATA",direction:null}:formingSignal || confirmedSignal;
     const signalCandle=formingSignal&&!stale?partial?.datetime:lastCandleAt;
-    const data={symbol,source:"Charles Schwab",interval,candles:completed,signal,signalCandle,
+    const data={symbol,source:"Charles Schwab",interval,candles:completed,formingCandle:!stale?partial:null,signal,signalCandle,
       lastCandleAt,expectedSession,dataStale:stale,
       signalIsLive: Boolean(!stale && signal?.direction && signalCandle &&
         now-new Date(signalCandle).getTime() < 30*60*1000)};
