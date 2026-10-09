@@ -1698,6 +1698,26 @@ function useRangeContract(symbol) {
   applySelectedSchwabContract();
 }
 
+function renderOptimalStrikePreview(analysis) {
+  const summary=document.getElementById("optimalStrikeSummary");
+  const container=document.getElementById("optimalStrikeCandidates");
+  if(!summary || !container) return;
+  const eligible=analysis.ranked.filter(x=>x.cost!==null && x.cost>=120 && x.cost<=240 && x.inRange &&
+    Number.isFinite(Number(x.contract.bid)) && Number(x.contract.bid)>0 &&
+    Number.isFinite(Number(x.contract.ask)) && Number(x.contract.ask)>0 &&
+    (Number(x.contract.ask)-Number(x.contract.bid))/Number(x.contract.ask)<=0.20);
+  if(!eligible.length){summary.textContent="NO QUALIFYING STRIKE · No sampled OTM contract meets ASK $1.20–$2.40, day-range and spread ≤20% checks.";container.replaceChildren();return;}
+  const top=eligible.slice(0,3);
+  summary.textContent="TOP SCREENED STRIKE: "+top[0].contract.strike+" "+top[0].contract.type+" · ASK $"+Number(top[0].contract.ask).toFixed(2)+" ($"+top[0].cost.toFixed(0)+") · Opportunity "+top[0].valuation.toFixed(1)+"%";
+  container.replaceChildren();
+  for(const [i,x] of top.entries()){
+    const button=document.createElement("button");button.type="button";button.className="secondary";
+    button.textContent="#"+(i+1)+" "+x.contract.strike+" "+x.contract.type+" · ASK $"+Number(x.contract.ask).toFixed(2)+" · "+x.valuation.toFixed(1)+"% · Select";
+    button.addEventListener("click",()=>useRangeContract(x.contract.symbol));
+    container.appendChild(button);
+  }
+}
+
 function renderRangeAutomation() {
   const box=document.getElementById("rangeAutomation");
   if(!box) return;
@@ -1708,6 +1728,7 @@ function renderRangeAutomation() {
   }
 
   const analysis=buildInvestepRangeSample(expiration);
+  renderOptimalStrikePreview(analysis);
   box.hidden=false;
   const direction=document.getElementById("rangeDirection");
   const marker=document.getElementById("rangeThresholdMarker");
