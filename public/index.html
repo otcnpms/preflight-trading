@@ -262,6 +262,12 @@
         <button class="secondary" id="loadSchwabOptionsBtn" type="button">Load Schwab Options</button>
       </div>
       <div class="option-chain-picker" id="optionChainPicker" hidden>
+        <div class="course-range-box" id="optimalStrikePreview">
+          <div class="course-range-head"><strong>Daily optimal strike · stock-specific instructor reference</strong><span class="range-status">Screening only</span></div>
+          <p id="optimalStrikeSummary" class="course-range-note">Load Schwab options and choose expiration to rank candidates.</p>
+          <div id="optimalStrikeCandidates" class="range-automation-summary"></div>
+          <p class="course-range-note">Ranks available OTM contracts by today's option high/low opportunity; checks current ASK and spread. Instructor ASK reference is stock-specific and advisory, not a filter. Recheck quotes before trading.</p>
+        </div>
         <div class="grid three">
           <label>Expiration<select id="chainExpiration"><option value="">Select expiration</option></select></label>
           <label>Type<select id="chainType"><option value="">Select type</option><option value="CALL">CALL</option><option value="PUT">PUT</option></select></label>
@@ -290,6 +296,7 @@
               <tbody id="rangeAutomationBody"></tbody>
             </table>
           </div>
+          <p class="range-automation-note" id="rangeSampleDiagnostic">Chain diagnostic pending.</p>
           <p class="range-automation-note">Method: today’s movement selects CALL or PUT · OTM only · find first premium &gt; $20 and skip it · analyze the next 8 strikes · rank by today’s low/high valuation % · top 2 stay subject to the live day-range check.</p>
         </div>
         <div class="course-range-box" id="courseRangeBox" hidden>

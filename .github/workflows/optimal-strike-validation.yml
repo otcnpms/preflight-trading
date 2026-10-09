@@ -1,0 +1,21 @@
+name: Optimal strike validation
+on:
+  pull_request:
+    paths:
+      - 'public/app.js'
+      - 'public/index.html'
+      - 'tests/optimal-strike.test.cjs'
+      - '.github/workflows/optimal-strike-validation.yml'
+  workflow_dispatch:
+jobs:
+  ranking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: node --check public/app.js
+      - name: Ranking regression tests
+        run: node tests/optimal-strike.test.cjs

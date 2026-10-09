@@ -1698,16 +1698,60 @@ function useRangeContract(symbol) {
   applySelectedSchwabContract();
 }
 
+function renderOptimalStrikePreview(analysis) {
+  const summary=document.getElementById("optimalStrikeSummary");
+  const container=document.getElementById("optimalStrikeCandidates");
+  if(!summary || !container) return;
+  const expiration=document.getElementById("chainExpiration")?.value || "";
+  const direction=analysis.type;
+  const spot=analysis.spot;
+  const candidates=(schwabOptionChain || []).filter(x=>x.expiration===expiration && x.type===direction && Number.isFinite(spot) && (direction==="CALL" ? x.strike>spot : x.strike<spot))
+    .map(contract=>({contract,valuation:optionRangePct(contract),inRange:optionPriceInsideDayRange(contract),cost:optionContractDollars(contract)}))
+    .filter(x=>x.valuation!==null).sort((a,b)=>b.valuation-a.valuation);
+  const eligible=candidates.filter(x=>x.inRange &&
+    Number.isFinite(Number(x.contract.bid)) && Number(x.contract.bid)>0 &&
+    Number.isFinite(Number(x.contract.ask)) && Number(x.contract.ask)>0 &&
+    (Number(x.contract.ask)-Number(x.contract.bid))/Number(x.contract.ask)<=0.20);
+  if(!eligible.length){summary.textContent="NO ELIGIBLE STRIKE · No OTM contract meets today's range and spread ≤20% checks.";container.replaceChildren();return;}
+  const top=eligible.slice(0,3);
+  const symbol=String(state.market?.symbol || "").toUpperCase();
+  const saved=investepOptionRanges[symbol];
+  const reference=x=>!saved ? "No instructor reference for "+symbol :
+    x.cost>=saved.optimal[0] && x.cost<=saved.optimal[1] ? "Inside "+symbol+" instructor optimal $"+saved.optimal.join("–") :
+    "Outside "+symbol+" instructor optimal $"+saved.optimal.join("–");
+  summary.textContent="TOP DAILY VALUATION: "+top[0].contract.strike+" "+top[0].contract.type+" · ASK $"+Number(top[0].contract.ask).toFixed(2)+" ($"+top[0].cost.toFixed(0)+") · Opportunity "+top[0].valuation.toFixed(1)+"% · "+reference(top[0]);
+  container.replaceChildren();
+  for(const [i,x] of top.entries()){
+    const button=document.createElement("button");button.type="button";button.className="secondary";
+    button.textContent="#"+(i+1)+" "+x.contract.strike+" "+x.contract.type+" · ASK $"+Number(x.contract.ask).toFixed(2)+" · "+x.valuation.toFixed(1)+"% · "+reference(x)+" · Select";
+    button.addEventListener("click",()=>useRangeContract(x.contract.symbol));
+    container.appendChild(button);
+  }
+}
+
 function renderRangeAutomation() {
   const box=document.getElementById("rangeAutomation");
   if(!box) return;
   const expiration=document.getElementById("chainExpiration")?.value || "";
   if(!schwabOptionChain?.length || !expiration) {
     box.hidden=true;
+    const previewSummary=document.getElementById("optimalStrikeSummary");
+    const previewCandidates=document.getElementById("optimalStrikeCandidates");
+    if(previewSummary) previewSummary.textContent="Load Schwab options and choose expiration to rank candidates.";
+    if(previewCandidates) previewCandidates.replaceChildren();
     return;
   }
 
   const analysis=buildInvestepRangeSample(expiration);
+  renderOptimalStrikePreview(analysis);
+  const sampleDiagnostic=document.getElementById("rangeSampleDiagnostic");
+  if(sampleDiagnostic){
+    const otmCount=(schwabOptionChain || []).filter(c=>c.expiration===expiration && c.type===analysis.type && Number.isFinite(analysis.spot) &&
+      (analysis.type==="CALL" ? c.strike>analysis.spot : c.strike<analysis.spot)).length;
+    sampleDiagnostic.textContent="Chain diagnostic: "+otmCount+" OTM "+(analysis.type||"")+
+      " strikes loaded for expiration · marker "+(analysis.marker ? analysis.marker.strike : "not found")+
+      " · "+analysis.sample.length+"/8 contracts available after marker.";
+  }
   box.hidden=false;
   const direction=document.getElementById("rangeDirection");
   const marker=document.getElementById("rangeThresholdMarker");
