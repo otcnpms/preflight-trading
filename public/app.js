@@ -1851,6 +1851,39 @@ function investepEligibleContracts(analysis) {
     (Number(x.contract.ask)-Number(x.contract.bid))/Number(x.contract.ask)<=0.20);
 }
 
+const investepExpirationMemoryKey="preflight-investep-expirations-v1";
+function savedInvestepExpiration(symbol) {
+  try { return JSON.parse(localStorage.getItem(investepExpirationMemoryKey)||"{}")[symbol]||""; }
+  catch { return ""; }
+}
+function rememberInvestepExpiration(symbol,expiration) {
+  try {
+    const saved=JSON.parse(localStorage.getItem(investepExpirationMemoryKey)||"{}");
+    saved[symbol]=expiration;
+    localStorage.setItem(investepExpirationMemoryKey,JSON.stringify(saved));
+  } catch { /* Browser storage is optional. */ }
+}
+function autoSelectInvestepForExpiration(symbol,expiration) {
+  const status=document.getElementById("chainStatus");
+  if(!expiration) {
+    status.textContent="Select an expiration date to automatically rank and populate an Investep strike.";
+    return;
+  }
+  const analysis=buildInvestepRangeSample(expiration);
+  const eligible=investepEligibleContracts(analysis);
+  if(eligible.length) {
+    useRangeContract(eligible[0].contract.symbol);
+    renderRangeAutomation();
+    status.textContent="Auto-selected "+eligible[0].contract.type+" $"+eligible[0].contract.strike+
+      " · "+expiration+" · Investep eligible. Manual override available.";
+  } else {
+    document.getElementById("chainType").value=analysis.type||"";
+    populateChainStrikes();
+    renderRangeAutomation();
+    status.textContent="No eligible Investep contract for "+symbol+" on "+expiration+
+      ". Choose another expiration or override manually.";
+  }
+}
 async function loadAndSelectSchwabOptions(symbol) {
   const picker=document.getElementById("optionChainPicker");
   const status=document.getElementById("chainStatus");
@@ -1860,34 +1893,19 @@ async function loadAndSelectSchwabOptions(symbol) {
     const resp=await fetch("/api/schwab/options/"+encodeURIComponent(symbol));
     const data=await resp.json();
     if(!resp.ok) throw new Error(data.error || "Unable to load Schwab options.");
-    // Do not apply a previous ticker's asynchronous response.
     if(document.getElementById("ticker").value.trim().toUpperCase()!==symbol ||
        String(state.market?.symbol || "").toUpperCase()!==symbol) return;
     schwabOptionChain=flattenSchwabChain(data);
     populateChainExpirations(schwabOptionChain);
     const expirations=[...new Set(schwabOptionChain.map(x=>x.expiration))].sort();
-    let chosen=null;
-    for(const expiration of expirations) {
-      const analysis=buildInvestepRangeSample(expiration);
-      const eligible=investepEligibleContracts(analysis);
-      if(eligible.length) {
-        chosen={expiration,contract:eligible[0].contract};
-        break;
-      }
-    }
-    if(chosen) {
-      document.getElementById("chainExpiration").value=chosen.expiration;
-      useRangeContract(chosen.contract.symbol);
-      renderRangeAutomation();
-      status.textContent="Auto-selected "+chosen.contract.type+" $"+chosen.contract.strike+
-        " · "+chosen.expiration+" · Investep eligible. You can change the contract manually.";
+    const previous=savedInvestepExpiration(symbol);
+    if(previous && expirations.includes(previous)) {
+      document.getElementById("chainExpiration").value=previous;
+      autoSelectInvestepForExpiration(symbol,previous);
     } else {
-      if(expirations.length) {
-        document.getElementById("chainExpiration").value=expirations[0];
-        renderRangeAutomation();
-      }
-      status.textContent="No eligible Investep contract found for "+symbol+
-        ". Check available expirations or choose a contract manually.";
+      status.textContent=previous
+        ? "Previous expiration is no longer available. Select a new expiration date."
+        : "Choose your expiration date. Preflight will automatically select the Investep strike.";
     }
   } catch(err) {
     status.textContent="Schwab option auto-selection unavailable: "+err.message+
@@ -1900,7 +1918,12 @@ document.getElementById("loadSchwabOptionsBtn").addEventListener("click", () => 
   if(symbol) loadAndSelectSchwabOptions(symbol);
 });
 
-document.getElementById("chainExpiration").addEventListener("change", () => { populateChainStrikes(); renderRangeAutomation(); });
+document.getElementById("chainExpiration").addEventListener("change", () => {
+  const expiration=document.getElementById("chainExpiration").value;
+  const symbol=document.getElementById("ticker").value.trim().toUpperCase();
+  if(expiration && symbol) rememberInvestepExpiration(symbol,expiration);
+  autoSelectInvestepForExpiration(symbol,expiration);
+});
 document.getElementById("chainType").addEventListener("change", populateChainStrikes);
 document.getElementById("chainStrike").addEventListener("change", applySelectedSchwabContract);
 document.getElementById("rangeAutomationBody")?.addEventListener("click", e => {
