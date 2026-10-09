@@ -1744,6 +1744,14 @@ function renderRangeAutomation() {
 
   const analysis=buildInvestepRangeSample(expiration);
   renderOptimalStrikePreview(analysis);
+  const sampleDiagnostic=document.getElementById("rangeSampleDiagnostic");
+  if(sampleDiagnostic){
+    const otmCount=(schwabOptionChain || []).filter(c=>c.expiration===expiration && c.type===analysis.type && Number.isFinite(analysis.spot) &&
+      (analysis.type==="CALL" ? c.strike>analysis.spot : c.strike<analysis.spot)).length;
+    sampleDiagnostic.textContent="Chain diagnostic: "+otmCount+" OTM "+(analysis.type||"")+
+      " strikes loaded for expiration · marker "+(analysis.marker ? analysis.marker.strike : "not found")+
+      " · "+analysis.sample.length+"/8 contracts available after marker.";
+  }
   box.hidden=false;
   const direction=document.getElementById("rangeDirection");
   const marker=document.getElementById("rangeThresholdMarker");
