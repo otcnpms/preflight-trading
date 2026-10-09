@@ -161,6 +161,14 @@ function populateBoards(){
 }
 let autoWatchTimer=null,scanInProgress=false,soundEnabled=false,nextScanAt=0;
 const seenAlerts=new Set();
+const lastObservedCandles=new Map();
+let activeWatchlistId=null;
+function shortSignal(data){
+  const s=data.signal;
+  if(!s?.direction)return s?.status||"NO SIGNAL";
+  const label=s.direction+" · "+s.status;
+  return data.signalIsLive?label:label+" · OLD";
+}
 function refreshWatchIndicators(){
   const active=Boolean(autoWatchTimer);
   $("signalWatchHealth").textContent=active?"● LIVE":"○ IDLE";
@@ -182,6 +190,9 @@ function playSignalTone(){
 function alertSignal(symbol,data){
   const s=data.signal;
   if(!data.signalIsLive || !s?.direction || !["CONFIRMED","FORMING"].includes(s.status))return;
+  // The first observation establishes a baseline, not an actionable new event.
+  // Alerts are only emitted on subsequent scans after the monitored candle changes.
+
   const key=[symbol,s.direction,s.status,data.signalCandle].join("|");
   if(seenAlerts.has(key))return;
   seenAlerts.add(key);
@@ -210,7 +221,9 @@ $("signalAutoWatch").addEventListener("click",()=>{
 $("signalScanBoard").addEventListener("click",async()=>{
   const board=savedBoards().find(b=>b.id===$("signalBoard").value);
   if(!board||scanInProgress)return;
+  if(activeWatchlistId!==board.id){activeWatchlistId=board.id;lastObservedCandles.clear();seenAlerts.clear();}
   scanInProgress=true;
+  const priorCandles=new Map(lastObservedCandles);
   const btn=$("signalScanBoard");btn.disabled=true;
   $("signalScanResults").replaceChildren();
   for(const [i,symbol] of board.symbols.entries()){
@@ -222,10 +235,14 @@ $("signalScanBoard").addEventListener("click",async()=>{
     line.append(link,status);$("signalScanResults").appendChild(line);
     try{const res=await fetch("/api/signals/"+encodeURIComponent(symbol)+"?interval=15min",{cache:"no-store"});
       const data=await res.json();if(!res.ok)throw Error(data.error||"Unavailable");
-      status.textContent=data.signal?.direction?data.signal.direction+" · "+data.signal.status:data.signal?.status||"NO SIGNAL";
+      status.textContent=shortSignal(data);
+      status.title=data.signalCandle?"Candle: "+new Date(data.signalCandle).toLocaleString("en-US",{timeZone:"America/New_York"})+" ET":"No signal candle";
       status.className=(data.signal?.status==="FORMING"?"forming":data.signal?.direction||"").toLowerCase();
       if(data.signalIsLive && data.signal?.direction)line.classList.add("live");
-      alertSignal(symbol,data);
+      else if(data.signal?.direction){line.classList.add("old");status.classList.add("old");}
+      const candleKey=data.signalCandle||null;
+      if(priorCandles.has(symbol) && priorCandles.get(symbol)!==candleKey)alertSignal(symbol,data);
+      lastObservedCandles.set(symbol,candleKey);
     }catch(err){status.textContent=err.message;}
   }
   $("signalScanProgress").textContent=board.symbols.length+" symbols";
