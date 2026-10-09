@@ -262,6 +262,12 @@
         <button class="secondary" id="loadSchwabOptionsBtn" type="button">Load Schwab Options</button>
       </div>
       <div class="option-chain-picker" id="optionChainPicker" hidden>
+        <div class="course-range-box" id="optimalStrikePreview">
+          <div class="course-range-head"><strong>ASK-qualified strike candidates · $120–$240 per standard contract</strong><span class="range-status">Screening only</span></div>
+          <p id="optimalStrikeSummary" class="course-range-note">Load Schwab options and choose expiration to rank candidates.</p>
+          <div id="optimalStrikeCandidates" class="range-automation-summary"></div>
+          <p class="course-range-note">Uses current ASK ($1.20–$2.40), OTM and existing Investep eight-contract sample. Ranking uses historical day-range opportunity, not probability of profit. Recheck quotes before trading.</p>
+        </div>
         <div class="grid three">
           <label>Expiration<select id="chainExpiration"><option value="">Select expiration</option></select></label>
           <label>Type<select id="chainType"><option value="">Select type</option><option value="CALL">CALL</option><option value="PUT">PUT</option></select></label>
