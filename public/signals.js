@@ -123,13 +123,13 @@ async function load() {
     const data=await response.json();
     if(!response.ok)throw new Error(data.error||"Data unavailable");
     drawChart(data.candles);
-    const markers = selectedInterval === "15min" ? breakoutMarkers(data.candles.slice(-65)) : [];
+    const markers = selectedInterval === "15min" && !data.dataStale ? breakoutMarkers(data.candles.slice(-65)) : [];
     const latestIndex = Math.min(64, data.candles.length - 1);
     const latest = markers.find(m => m.index === latestIndex);
-    const call100 = latest?.direction === "CALL";
-    const put100 = latest?.direction === "PUT";
+    const call100 = !data.dataStale && latest?.direction === "CALL";
+    const put100 = !data.dataStale && latest?.direction === "PUT";
     const indicator = $("signalBreakout100");
-    if (indicator) indicator.textContent = selectedInterval === "15min"
+    if (indicator) indicator.textContent = data.dataStale ? "STALE DATA · CALL/PUT unavailable" : selectedInterval === "15min"
       ? "CALL " + (call100 ? 100 : 0) + " · PUT " + (put100 ? 100 : 0) + " · latest completed candle"
       : "CALL/PUT 0–100 available on 15m";
     $("signalTitle").textContent=symbol+" · "+intervalLabels[selectedInterval]+" Candles + BB (20, 2)";
@@ -138,11 +138,11 @@ async function load() {
     updateInvestepHandoff();
     $("signalDirection").textContent=s.status==="FORMING"?s.direction+" · FORMING":s.status==="CONFIRMED"?s.direction+" · CONFIRMED":s.status==="UNCONFIRMED"?s.direction+" · UNCONFIRMED":s.status.replaceAll("_"," ");
     $("signalDirection").className="signal-state "+(s.status==="FORMING"?"forming":s.direction||"").toLowerCase();
-    $("signalExplanation").textContent=s.status==="CONTEXT_ONLY"?"Signal detection remains on 15m. This timeframe is for context.":s.status==="FORMING"?"Provisional intrabar breakout. Wait for candle close to confirm.":s.status==="CONFIRMED"?"Completed candle meets breakout and band expansion thresholds. Volume is supporting context.":s.status==="UNCONFIRMED"?"Breakout detected but filters did not all pass.":"No confirmed breakout in latest completed candle.";
+    $("signalExplanation").textContent=s.status==="STALE_DATA"?"Schwab has not supplied the expected trading session. Signals are disabled until candle data catches up.":s.status==="CONTEXT_ONLY"?"Signal detection remains on 15m. This timeframe is for context.":s.status==="FORMING"?"Provisional intrabar breakout. Wait for candle close to confirm.":s.status==="CONFIRMED"?"Completed candle meets breakout and band expansion thresholds. Volume is supporting context.":s.status==="UNCONFIRMED"?"Breakout detected but filters did not all pass.":"No confirmed breakout in latest completed candle.";
     $("signalVolume").textContent=Number.isFinite(s.volumeRatio)?s.volumeRatio.toFixed(2)+"×":"—";
     $("signalExpansion").textContent=Number.isFinite(s.widthRatio)?s.widthRatio.toFixed(2)+"×":"—";
     $("signalSource").textContent=data.source;
-    $("signalStatus").textContent="Loaded "+data.candles.length+" completed candles.";
+    $("signalStatus").textContent="Loaded "+data.candles.length+" completed candles. Latest: "+(data.lastCandleAt?chartET(data.lastCandleAt):"none")+(data.dataStale?" · STALE DATA (expected "+data.expectedSession+" ET)":"");
   }catch(err){$("signalStatus").textContent=err.message;$("signalDirection").textContent="UNAVAILABLE";}
   finally{$("signalLoad").disabled=false;}
 }
@@ -237,7 +237,7 @@ $("signalScanBoard").addEventListener("click",async()=>{
     line.append(link,status);$("signalScanResults").appendChild(line);
     try{const res=await fetch("/api/signals/"+encodeURIComponent(symbol)+"?interval=15min",{cache:"no-store"});
       const data=await res.json();if(!res.ok)throw Error(data.error||"Unavailable");
-      status.textContent=data.signal?.direction?data.signal.direction+" · "+data.signal.status:data.signal?.status||"NO SIGNAL";
+      status.textContent=data.dataStale?"STALE DATA":data.signal?.direction?data.signal.direction+" · "+data.signal.status:data.signal?.status||"NO SIGNAL";
       status.className=(data.signal?.status==="FORMING"?"forming":data.signal?.direction||"").toLowerCase();
       if(data.signalIsLive && data.signal?.direction)line.classList.add("live");
       alertSignal(symbol,data);

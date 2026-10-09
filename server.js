@@ -408,6 +408,9 @@ app.get("/api/signals/:symbol", async (req, res) => {
     url.searchParams.set("frequencyType",interval==="1day"?"daily":"minute");
     url.searchParams.set("frequency",interval==="1day"?"1":interval==="1h"?"30":"15");
     url.searchParams.set("needExtendedHoursData","false");
+    // Schwab defaults an omitted endDate to the previous business day close.
+    // Request through now so the current trading session is included.
+    if(interval!=="1day")url.searchParams.set("endDate",String(Date.now()));
     const response = await fetch(url,{headers:{Authorization:"Bearer "+bundle.access_token,Accept:"application/json"}});
     const payload = await response.json().catch(()=>({}));
     if(!response.ok || !Array.isArray(payload.candles))
@@ -451,10 +454,30 @@ app.get("/api/signals/:symbol", async (req, res) => {
     const forming=partial && completed.length>=20 ? evaluateBollinger15m([...completed,partial]) : null;
     const formingSignal=forming?.direction && forming.status==="CONFIRMED"
       ? {...forming,status:"FORMING"} : null;
-    const signal=formingSignal || confirmedSignal;
-    const signalCandle=formingSignal?partial?.datetime:completed.at(-1)?.datetime;
+    // Compare against the expected US trading session, not a rolling 24h age:
+    // Friday candles remain valid on weekends; missing weekday sessions do not.
+    const etDay = d => {
+      const p=parts(d);
+      return p.year+"-"+p.month+"-"+p.day;
+    };
+    const lastCandleAt=completed.at(-1)?.datetime||null;
+    const etMinutes=Number(today.hour)*60+Number(today.minute);
+    const expectedDate=new Date(now);
+    // At 10:00 ET on a weekday, at least one 15m candle should be complete.
+    // Before that, use the preceding weekday to avoid false alarms at the open.
+    const todayWeekday=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short"}).format(expectedDate);
+    if(["Sat","Sun"].includes(todayWeekday) || etMinutes<600){
+      do {expectedDate.setUTCDate(expectedDate.getUTCDate()-1);}
+      while(["Sat","Sun"].includes(new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",weekday:"short"}).format(expectedDate)));
+    }
+    const expectedSession=etDay(expectedDate);
+    const latestSession=lastCandleAt?etDay(new Date(lastCandleAt)):null;
+    const stale=interval==="15min" && (!latestSession || latestSession<expectedSession);
+    const signal=stale?{status:"STALE_DATA",direction:null}:formingSignal || confirmedSignal;
+    const signalCandle=formingSignal&&!stale?partial?.datetime:lastCandleAt;
     const data={symbol,source:"Charles Schwab",interval,candles:completed,signal,signalCandle,
-      signalIsLive: Boolean(signal?.direction && signalCandle &&
+      lastCandleAt,expectedSession,dataStale:stale,
+      signalIsLive: Boolean(!stale && signal?.direction && signalCandle &&
         now-new Date(signalCandle).getTime() < 30*60*1000)};
     signalCache.set(cacheKey,{at:Date.now(),data});
     res.json(data);
