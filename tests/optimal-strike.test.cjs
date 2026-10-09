@@ -35,9 +35,9 @@ function render(symbol,chain,type="CALL",spot=100){
  return {text:elements.optimalStrikeSummary.textContent,buttons:elements.optimalStrikeCandidates.children.map(x=>x.textContent)};
 }
 let out=render("HD",[c("A",105,2,1,4),c("B",110,0.4,0.2,1.8),c("C",115,1.5,1,2),c("ITM",90,1,0.5,2)]);
-assert.match(out.text,/105 CALL/); // highest opportunity, even if ASK within/outside instructor reference
+assert.match(out.text,/110 CALL/); // highest valuation wins even at lower ASK
 assert.equal(out.buttons.length,3);
-assert.match(out.buttons[1],/110 CALL/);
+assert.match(out.buttons[1],/105 CALL/);
 out=render("HD",[c("HIGH",105,3,1,4),c("LOW",110,2,1,2)]);
 assert.match(out.text,/105 CALL/);
 assert.match(out.text,/Outside HD instructor optimal/);
