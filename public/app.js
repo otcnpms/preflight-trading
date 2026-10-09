@@ -1714,7 +1714,11 @@ function renderOptimalStrikePreview(analysis) {
     (Number(x.contract.ask)-Number(x.contract.bid))/Number(x.contract.ask)<=0.20);
   if(!eligible.length){summary.textContent="NO ELIGIBLE STRIKE · No OTM contract meets today's range and spread ≤20% checks.";container.replaceChildren();return;}
   const top=eligible.slice(0,3);
-  const reference=x=>x.cost>=120 && x.cost<=240 ? "Inside saved instructor ASK reference" : "Outside saved instructor ASK reference";
+  const symbol=String(state.market?.symbol || "").toUpperCase();
+  const saved=investepOptionRanges[symbol];
+  const reference=x=>!saved ? "No instructor reference for "+symbol :
+    x.cost>=saved.optimal[0] && x.cost<=saved.optimal[1] ? "Inside "+symbol+" instructor optimal $"+saved.optimal.join("–") :
+    "Outside "+symbol+" instructor optimal $"+saved.optimal.join("–");
   summary.textContent="TOP DAILY VALUATION: "+top[0].contract.strike+" "+top[0].contract.type+" · ASK $"+Number(top[0].contract.ask).toFixed(2)+" ($"+top[0].cost.toFixed(0)+") · Opportunity "+top[0].valuation.toFixed(1)+"% · "+reference(top[0]);
   container.replaceChildren();
   for(const [i,x] of top.entries()){
