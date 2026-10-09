@@ -1735,6 +1735,10 @@ function renderRangeAutomation() {
   const expiration=document.getElementById("chainExpiration")?.value || "";
   if(!schwabOptionChain?.length || !expiration) {
     box.hidden=true;
+    const previewSummary=document.getElementById("optimalStrikeSummary");
+    const previewCandidates=document.getElementById("optimalStrikeCandidates");
+    if(previewSummary) previewSummary.textContent="Load Schwab options and choose expiration to rank candidates.";
+    if(previewCandidates) previewCandidates.replaceChildren();
     return;
   }
 
