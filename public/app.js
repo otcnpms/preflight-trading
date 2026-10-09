@@ -1707,13 +1707,8 @@ function renderOptimalStrikePreview(analysis) {
   const expiration=document.getElementById("chainExpiration")?.value || "";
   const direction=analysis.type;
   const spot=analysis.spot;
-  const candidates=(schwabOptionChain || []).filter(x=>x.expiration===expiration && x.type===direction && Number.isFinite(spot) && (direction==="CALL" ? x.strike>spot : x.strike<spot))
-    .map(contract=>({contract,valuation:optionRangePct(contract),inRange:optionPriceInsideDayRange(contract),cost:optionContractDollars(contract)}))
-    .filter(x=>x.valuation!==null).sort((a,b)=>b.valuation-a.valuation);
-  const eligible=candidates.filter(x=>x.inRange &&
-    Number.isFinite(Number(x.contract.bid)) && Number(x.contract.bid)>0 &&
-    Number.isFinite(Number(x.contract.ask)) && Number(x.contract.ask)>0 &&
-    (Number(x.contract.ask)-Number(x.contract.bid))/Number(x.contract.ask)<=0.20);
+  // The recommendation must use the same eight contracts as Investep's $20 marker method.
+  const eligible=investepEligibleContracts(analysis);
   if(!eligible.length){summary.textContent="NO ELIGIBLE STRIKE · No OTM contract meets today's range and spread ≤20% checks.";container.replaceChildren();return;}
   const top=eligible.slice(0,3);
   const symbol=String(state.market?.symbol || "").toUpperCase();
