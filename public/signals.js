@@ -168,13 +168,30 @@ function savedBoards(){
 }
 function populateBoards(){
   const select=$("signalBoard"),boards=savedBoards();
+  const previous=select.value;
   select.replaceChildren();
   for(const b of boards){const option=document.createElement("option");option.value=b.id;option.textContent=b.name+" ("+b.symbols.length+")";select.appendChild(option);}
   const active=localStorage.getItem("preflightActiveWatchBoard");
-  if(boards.some(b=>b.id===active))select.value=active;
+  if(boards.some(b=>b.id===previous))select.value=previous;
+  else if(boards.some(b=>b.id===active))select.value=active;
   if(!boards.length)$("signalScanProgress").textContent="No saved watchlists in this browser. Create one in Preflight first.";
 }
 let autoWatchTimer=null,scanInProgress=false,soundEnabled=false,nextScanAt=0;
+let lastBoardSnapshot=localStorage.getItem("preflightWatchBoards")||"";
+function syncSavedWatchlists(){
+  const current=localStorage.getItem("preflightWatchBoards")||"";
+  if(current===lastBoardSnapshot)return false;
+  lastBoardSnapshot=current;
+  populateBoards();
+  if(!scanInProgress && autoWatchTimer)$("signalScanBoard").click();
+  return true;
+}
+window.addEventListener("storage",event=>{
+  if(event.key==="preflightWatchBoards" || event.key==="preflightActiveWatchBoard")syncSavedWatchlists();
+});
+window.addEventListener("focus",syncSavedWatchlists);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)syncSavedWatchlists();});
+setInterval(syncSavedWatchlists,10000);
 const seenAlerts=new Set();
 function refreshWatchIndicators(){
   const active=Boolean(autoWatchTimer);
@@ -223,6 +240,7 @@ $("signalAutoWatch").addEventListener("click",()=>{
   refreshWatchIndicators();
 });
 $("signalScanBoard").addEventListener("click",async()=>{
+  syncSavedWatchlists();
   const board=savedBoards().find(b=>b.id===$("signalBoard").value);
   if(!board||scanInProgress)return;
   scanInProgress=true;
