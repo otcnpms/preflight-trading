@@ -26,6 +26,14 @@ function breakoutMarkers(candles) {
   }
   return markers;
 }
+const chartET = datetime => {
+  const date = new Date(datetime);
+  if (Number.isNaN(date.getTime())) return String(datetime);
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", month: "short", day: "numeric",
+    year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short"
+  }).format(date);
+};
 function drawChart(candles) {
   const svg=$("signalChart"); svg.replaceChildren();
   const rows=candles.slice(-65);
@@ -61,9 +69,16 @@ function drawChart(candles) {
   const width=Math.max(2,(right-left)/rows.length*.54);
   rows.forEach((c,i)=>{
     const color=c.close>=c.open?"#5fd39a":"#f07e7e",cx=x(i);
-    element("line",{x1:cx,y1:y(c.high),x2:cx,y2:y(c.low),stroke:color,"stroke-width":1.5},svg);
+    const candleGroup = element("g",{},svg);
+    element("line",{x1:cx,y1:y(c.high),x2:cx,y2:y(c.low),stroke:color,"stroke-width":1.5},candleGroup);
     element("rect",{x:cx-width/2,y:Math.min(y(c.open),y(c.close)),width,
-      height:Math.max(1,Math.abs(y(c.open)-y(c.close))),fill:color},svg);
+      height:Math.max(1,Math.abs(y(c.open)-y(c.close))),fill:color},candleGroup);
+    element("rect",{x:cx-Math.max(5,width/2),y:top,width:Math.max(10,width),
+      height:bottom-top,fill:"transparent"},candleGroup);
+    element("title",{},candleGroup).textContent =
+      chartET(c.datetime) + " | O " + c.open.toFixed(2) +
+      " H " + c.high.toFixed(2) + " L " + c.low.toFixed(2) +
+      " C " + c.close.toFixed(2) + " | Volume " + Number(c.volume).toLocaleString("en-US");
   });
   if (selectedInterval === "15min") {
     for (const marker of breakoutMarkers(rows).filter(m => m.first)) {
@@ -93,8 +108,8 @@ function drawChart(candles) {
         marker.direction + " confirmed breakout · " + formatted;
     }
   }
-  element("text",{x:left,y:393,fill:"#91a2b8","font-size":11},svg).textContent=rows[0].datetime;
-  element("text",{x:right,y:393,fill:"#91a2b8","font-size":11,"text-anchor":"end"},svg).textContent=rows.at(-1).datetime;
+  element("text",{x:left,y:393,fill:"#91a2b8","font-size":11},svg).textContent=chartET(rows[0].datetime);
+  element("text",{x:right,y:393,fill:"#91a2b8","font-size":11,"text-anchor":"end"},svg).textContent=chartET(rows.at(-1).datetime);
 }
 let selectedInterval="15min";
 let selectedTradeDirection=null;
