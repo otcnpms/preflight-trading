@@ -280,6 +280,13 @@ async function loadMarketData() {
     const chainStrike=document.getElementById("chainStrike"); if(chainStrike) chainStrike.innerHTML='<option value="">Select strike</option>';
     const rangeBox=document.getElementById("courseRangeBox"); if(rangeBox) rangeBox.hidden=true;
     const autoBox=document.getElementById("rangeAutomation"); if(autoBox) autoBox.hidden=true;
+    const previewSummary=document.getElementById("optimalStrikeSummary");
+    if(previewSummary) previewSummary.textContent="Waiting for "+symbol+" options and expiration selection.";
+    const previewCandidates=document.getElementById("optimalStrikeCandidates");
+    if(previewCandidates) previewCandidates.replaceChildren();
+    const spotPrice=document.getElementById("spotPrice");
+    if(spotPrice) spotPrice.value="";
+    updateMetrics();
   }
 
   button.disabled = true;
@@ -1897,6 +1904,8 @@ async function loadAndSelectSchwabOptions(symbol) {
        String(state.market?.symbol || "").toUpperCase()!==symbol) return;
     schwabOptionChain=flattenSchwabChain(data);
     populateChainExpirations(schwabOptionChain);
+    // Never retain the previous ticker's ranked contracts while awaiting expiration selection.
+    renderRangeAutomation();
     const expirations=[...new Set(schwabOptionChain.map(x=>x.expiration))].sort();
     const previous=savedInvestepExpiration(symbol);
     if(previous && expirations.includes(previous)) {
