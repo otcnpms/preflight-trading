@@ -55,3 +55,15 @@ assert.match(out.text,/95 PUT/);
 out=render("HD",[c("EXPIRED",105,2,1,4),{...c("OTHER",106,2,1,4),expiration:"2026-10-23"}]);
 assert.equal(out.buttons.length,1);
 console.log("7 optimal-strike ranking tests passed");
+
+const appSource=fs.readFileSync("public/app.js","utf8");
+const marketLoader=appSource.slice(appSource.indexOf("async function loadMarketData()"),appSource.indexOf("\nfunction detectWatch",appSource.indexOf("async function loadMarketData()")));
+assert.match(marketLoader,/previousActiveSymbol !== symbol/);
+assert.match(marketLoader,/schwabOptionChain = null/);
+assert.match(marketLoader,/previewCandidates\.replaceChildren\(\)/);
+assert.match(marketLoader,/previewSummary\.textContent="Waiting for "/);
+assert.match(marketLoader,/await loadAndSelectSchwabOptions\(symbol\)/);
+assert.ok(marketLoader.indexOf("previewCandidates.replaceChildren()") < marketLoader.indexOf("await loadAndSelectSchwabOptions(symbol)"),"Stale IWM candidates must clear before QQQ options load");
+const optionsLoader=appSource.slice(appSource.indexOf("async function loadAndSelectSchwabOptions(symbol)"),appSource.indexOf('document.getElementById("loadSchwabOptionsBtn")'));
+assert.match(optionsLoader,/populateChainExpirations\(schwabOptionChain\);\s*\/\/ Never retain[\s\S]*?renderRangeAutomation\(\);/);
+console.log("Ticker-switch stale preview regression checks passed");
