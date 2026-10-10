@@ -439,6 +439,8 @@ async function loadMarketData() {
     saveWatchResults();
     renderWatchlist();
 
+    // Automatically populate the Investep option contract after the ticker is loaded.
+    await loadAndSelectSchwabOptions(symbol);
     msg.textContent = `${symbol} loaded. 15m, 1H and Daily context calculated from returned price history.`;
     if (!addedToBoard && !watchSymbols.includes(symbol)) {
       msg.textContent += currentLang==="es" ? " · Watchlist llena (12/12)." : " · Watchlist full (12/12).";
@@ -1705,13 +1707,8 @@ function renderOptimalStrikePreview(analysis) {
   const expiration=document.getElementById("chainExpiration")?.value || "";
   const direction=analysis.type;
   const spot=analysis.spot;
-  const candidates=(schwabOptionChain || []).filter(x=>x.expiration===expiration && x.type===direction && Number.isFinite(spot) && (direction==="CALL" ? x.strike>spot : x.strike<spot))
-    .map(contract=>({contract,valuation:optionRangePct(contract),inRange:optionPriceInsideDayRange(contract),cost:optionContractDollars(contract)}))
-    .filter(x=>x.valuation!==null).sort((a,b)=>b.valuation-a.valuation);
-  const eligible=candidates.filter(x=>x.inRange &&
-    Number.isFinite(Number(x.contract.bid)) && Number(x.contract.bid)>0 &&
-    Number.isFinite(Number(x.contract.ask)) && Number(x.contract.ask)>0 &&
-    (Number(x.contract.ask)-Number(x.contract.bid))/Number(x.contract.ask)<=0.20);
+  // The recommendation must use the same eight contracts as Investep's $20 marker method.
+  const eligible=investepEligibleContracts(analysis);
   if(!eligible.length){summary.textContent="NO ELIGIBLE STRIKE · No OTM contract meets today's range and spread ≤20% checks.";container.replaceChildren();return;}
   const top=eligible.slice(0,3);
   const symbol=String(state.market?.symbol || "").toUpperCase();
@@ -1847,39 +1844,86 @@ function applySelectedSchwabContract() {
   updateMetrics();
 }
 
-document.getElementById("loadSchwabOptionsBtn").addEventListener("click", async () => {
-  const symbol = document.getElementById("ticker").value.trim().toUpperCase();
-  const picker = document.getElementById("optionChainPicker");
-  const status = document.getElementById("chainStatus");
-  if (!symbol) {
-    status.textContent = currentLang === "es" ? "Ingresa un ticker primero." : "Enter a ticker first.";
-    picker.hidden = false;
+function investepEligibleContracts(analysis) {
+  return analysis.ranked.filter(x => x.inRange &&
+    Number.isFinite(Number(x.contract.bid)) && Number(x.contract.bid)>0 &&
+    Number.isFinite(Number(x.contract.ask)) && Number(x.contract.ask)>0 &&
+    (Number(x.contract.ask)-Number(x.contract.bid))/Number(x.contract.ask)<=0.20);
+}
+
+const investepExpirationMemoryKey="preflight-investep-expirations-v1";
+function savedInvestepExpiration(symbol) {
+  try { return JSON.parse(localStorage.getItem(investepExpirationMemoryKey)||"{}")[symbol]||""; }
+  catch { return ""; }
+}
+function rememberInvestepExpiration(symbol,expiration) {
+  try {
+    const saved=JSON.parse(localStorage.getItem(investepExpirationMemoryKey)||"{}");
+    saved[symbol]=expiration;
+    localStorage.setItem(investepExpirationMemoryKey,JSON.stringify(saved));
+  } catch { /* Browser storage is optional. */ }
+}
+function autoSelectInvestepForExpiration(symbol,expiration) {
+  const status=document.getElementById("chainStatus");
+  if(!expiration) {
+    status.textContent="Select an expiration date to automatically rank and populate an Investep strike.";
     return;
   }
-  picker.hidden = false;
-  document.getElementById("courseRangeBox").hidden = true;
-  status.textContent = currentLang === "es" ? `Cargando opciones Schwab para ${symbol}…` : `Loading Schwab options for ${symbol}…`;
-  try {
-    const resp = await fetch("/api/schwab/options/" + encodeURIComponent(symbol));
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || "Unable to load Schwab options.");
-    schwabOptionChain = flattenSchwabChain(data);
-    populateChainExpirations(schwabOptionChain);
-    // Preserve the original manual contract-selection flow:
-    // expiration -> CALL/PUT -> strike. The range automation observes the
-    // selected expiration but must not take over the picker.
-    document.getElementById("chainType").value="";
-    document.getElementById("chainStrike").innerHTML='<option value="">Select strike</option>';
-    document.getElementById("rangeAutomation").hidden=true;
-    status.textContent = currentLang === "es"
-      ? `${schwabOptionChain.length} cotizaciones de contratos cargadas para ${symbol}.`
-      : `${schwabOptionChain.length} contract quotes loaded for ${symbol}.`;
-  } catch (err) {
-    status.textContent = err.message;
+  const analysis=buildInvestepRangeSample(expiration);
+  const eligible=investepEligibleContracts(analysis);
+  if(eligible.length) {
+    useRangeContract(eligible[0].contract.symbol);
+    renderRangeAutomation();
+    status.textContent="Auto-selected "+eligible[0].contract.type+" $"+eligible[0].contract.strike+
+      " · "+expiration+" · Investep eligible. Manual override available.";
+  } else {
+    document.getElementById("chainType").value=analysis.type||"";
+    populateChainStrikes();
+    renderRangeAutomation();
+    status.textContent="No eligible Investep contract for "+symbol+" on "+expiration+
+      ". Choose another expiration or override manually.";
   }
+}
+async function loadAndSelectSchwabOptions(symbol) {
+  const picker=document.getElementById("optionChainPicker");
+  const status=document.getElementById("chainStatus");
+  picker.hidden=false;
+  status.textContent="Loading Schwab options for "+symbol+"…";
+  try {
+    const resp=await fetch("/api/schwab/options/"+encodeURIComponent(symbol));
+    const data=await resp.json();
+    if(!resp.ok) throw new Error(data.error || "Unable to load Schwab options.");
+    if(document.getElementById("ticker").value.trim().toUpperCase()!==symbol ||
+       String(state.market?.symbol || "").toUpperCase()!==symbol) return;
+    schwabOptionChain=flattenSchwabChain(data);
+    populateChainExpirations(schwabOptionChain);
+    const expirations=[...new Set(schwabOptionChain.map(x=>x.expiration))].sort();
+    const previous=savedInvestepExpiration(symbol);
+    if(previous && expirations.includes(previous)) {
+      document.getElementById("chainExpiration").value=previous;
+      autoSelectInvestepForExpiration(symbol,previous);
+    } else {
+      status.textContent=previous
+        ? "Previous expiration is no longer available. Select a new expiration date."
+        : "Choose your expiration date. Preflight will automatically select the Investep strike.";
+    }
+  } catch(err) {
+    status.textContent="Schwab option auto-selection unavailable: "+err.message+
+      ". Manual selection remains available.";
+  }
+}
+
+document.getElementById("loadSchwabOptionsBtn").addEventListener("click", () => {
+  const symbol=document.getElementById("ticker").value.trim().toUpperCase();
+  if(symbol) loadAndSelectSchwabOptions(symbol);
 });
 
-document.getElementById("chainExpiration").addEventListener("change", () => { populateChainStrikes(); renderRangeAutomation(); });
+document.getElementById("chainExpiration").addEventListener("change", () => {
+  const expiration=document.getElementById("chainExpiration").value;
+  const symbol=document.getElementById("ticker").value.trim().toUpperCase();
+  if(expiration && symbol) rememberInvestepExpiration(symbol,expiration);
+  autoSelectInvestepForExpiration(symbol,expiration);
+});
 document.getElementById("chainType").addEventListener("change", populateChainStrikes);
 document.getElementById("chainStrike").addEventListener("change", applySelectedSchwabContract);
 document.getElementById("rangeAutomationBody")?.addEventListener("click", e => {

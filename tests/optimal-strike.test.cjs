@@ -25,13 +25,15 @@ const ctx={
   useRangeContract:symbol=>{ctx.selected=symbol}
 };
 vm.createContext(ctx);
+ctx.investepEligibleContracts=analysis=>analysis.ranked.filter(x=>x.inRange && x.contract.bid>0 && x.contract.ask>0 && (x.contract.ask-x.contract.bid)/x.contract.ask<=0.20);
 vm.runInContext(extract("renderOptimalStrikePreview"),ctx);
 function c(symbol,strike,ask,low,high,bid=ask*0.9,type="CALL") {
  return {symbol,strike,ask,low,high,bid,type,expiration:"2026-10-16"};
 }
 function render(symbol,chain,type="CALL",spot=100){
  ctx.state.market.symbol=symbol;ctx.schwabOptionChain=chain;
- ctx.renderOptimalStrikePreview({type,spot});
+ const ranked=chain.filter(x=>x.expiration==="2026-10-16" && x.type===type && (type==="CALL"?x.strike>spot:x.strike<spot)).map(contract=>({contract,valuation:ctx.optionRangePct(contract),inRange:ctx.optionPriceInsideDayRange(contract),cost:ctx.optionContractDollars(contract)})).filter(x=>x.valuation!==null).sort((a,b)=>b.valuation-a.valuation);
+ ctx.renderOptimalStrikePreview({type,spot,ranked});
  return {text:elements.optimalStrikeSummary.textContent,buttons:elements.optimalStrikeCandidates.children.map(x=>x.textContent)};
 }
 let out=render("HD",[c("A",105,2,1,4),c("B",110,0.4,0.2,1.8),c("C",115,1.5,1,2),c("ITM",90,1,0.5,2)]);
